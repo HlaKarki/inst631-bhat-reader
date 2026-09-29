@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ground: #f3f3f1;
+  --color-ink: #1c1c1a;
+}
+
+/* Highlights pick these by category name at runtime, so they stay plain variables Tailwind can't tree-shake. */
+:root {
+  --c-central: #f26d6d;
+  --c-rq: #ffab3d;
+  --c-def: #f5dc3a;
+  --c-prior: #f585c6;
+  --c-method: #6fd26f;
+  --c-results: #9a87f5;
+  --c-policy: #4fd3d3;
+  --c-mine: #6fb0ff;
+}

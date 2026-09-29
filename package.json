@@ -1,15 +1,31 @@
 {
   "name": "reader-app",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
-    "sync": "cp ../part3-reader/data.json src/data.json && rm -rf public/pages && cp -R ../part3-reader/pages public/pages",
+    "sync": "cp ../part3-reader/data.json src/data/paper.json && rm -rf public/pages && cp -R ../part3-reader/pages public/pages",
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "cn": "^0.4.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxfmt": "^0.71.0",
+    "oxlint": "^1.81.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"
   }
