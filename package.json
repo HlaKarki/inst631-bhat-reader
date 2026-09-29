@@ -1,0 +1,16 @@
+{
+  "name": "reader-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "sync": "cp ../part3-reader/data.json src/data.json && rm -rf public/pages && cp -R ../part3-reader/pages public/pages",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0"
+  }
+}
