@@ -39,6 +39,7 @@ body {
 
 .hl {
   position: absolute;
-  background: rgb(255 214 0 / 0.35);
+  background: var(--c);
+  opacity: 0.34;
   mix-blend-mode: multiply;
 }
