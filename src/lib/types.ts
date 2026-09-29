@@ -14,10 +14,17 @@ export type TocEntry = {
   page: number
 }
 
+export type Strip = {
+  page: number
+  box: Rect
+  src: string
+}
+
 export type ReaderData = {
   pages: number
   aspect: number
   cats: Record<string, string>
   notes: Note[]
   toc: TocEntry[]
+  strips: Strip[]
 }

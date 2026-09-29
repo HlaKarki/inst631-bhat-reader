@@ -17,10 +17,12 @@ export function NoteCard({ notes, cats, open }: NoteCardProps) {
 
   const onLeft = left < 0.5
   const below = bottom < 0.6
-  const place: CSSProperties = {
-    ...(onLeft ? { left: `${left * 100}%` } : { right: `${(1 - right) * 100}%` }),
-    ...(below ? { top: `${bottom * 100 + 1}%` } : { bottom: `${(1 - top) * 100 + 1}%` }),
-  }
+  const place = {
+    '--l': onLeft ? `${left * 100}%` : 'auto',
+    '--r': onLeft ? 'auto' : `${(1 - right) * 100}%`,
+    '--t': below ? `${bottom * 100 + 1}%` : 'auto',
+    '--b': below ? 'auto' : `${(1 - top) * 100 + 1}%`,
+  } as CSSProperties
   const origin = below
     ? onLeft
       ? 'origin-top-left'
@@ -29,23 +31,31 @@ export function NoteCard({ notes, cats, open }: NoteCardProps) {
       ? 'origin-bottom-left'
       : 'origin-bottom-right'
   const tucked = cn(
-    'opacity-0 motion-safe:scale-96',
-    below ? 'motion-safe:-translate-y-1' : 'motion-safe:translate-y-1',
+    'opacity-0',
+    'max-sm:motion-safe:translate-y-3',
+    'sm:motion-safe:scale-96',
+    below ? 'sm:motion-safe:-translate-y-1' : 'sm:motion-safe:translate-y-1',
   )
 
   return (
     <aside
       className={cn(
-        'pointer-events-none absolute z-10 w-[40%] min-w-64',
-        'grid gap-3 rounded-md bg-white p-3 shadow-lg',
+        'pointer-events-none z-10 grid gap-3 bg-white',
         'text-sm leading-snug text-ink',
+        'max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:max-h-[40vh] max-sm:overflow-y-auto',
+        'max-sm:rounded-t-xl max-sm:px-4 max-sm:pt-4 max-sm:pb-[calc(1rem+env(safe-area-inset-bottom))] max-sm:shadow-[0_-4px_16px_rgb(0_0_0/0.12)]',
+        'sm:absolute sm:top-(--t) sm:right-(--r) sm:bottom-(--b) sm:left-(--l) sm:w-[40%] sm:min-w-64',
+        'sm:rounded-md sm:p-3 sm:shadow-lg',
         'transition-[opacity,scale,translate] ease-out-expo',
         origin,
         open ? 'duration-200' : 'duration-120',
-        open ? 'opacity-100' : tucked,
-        'starting:opacity-0 motion-safe:starting:scale-96',
+        open ? 'opacity-100 max-sm:pointer-events-auto' : tucked,
+        'starting:opacity-0 max-sm:motion-safe:starting:translate-y-3 sm:motion-safe:starting:scale-96',
       )}
       style={place}
+      // The card lives inside the page element, so stop its taps from re-running the page's note picker.
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerMove={(e) => e.stopPropagation()}
     >
       {notes.map((note) => (
         <div

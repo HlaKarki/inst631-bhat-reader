@@ -1,17 +1,18 @@
 import type { CSSProperties } from 'react'
-import type { Note } from '@/lib/types'
+import type { Note, Rect } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 export type HighlightState = 'idle' | 'lit' | 'dim'
 
 type NoteHighlightProps = {
   note: Note
+  rects: Rect[]
   src: string
   state: HighlightState
 }
 
-export function NoteHighlight({ note, src, state }: NoteHighlightProps) {
-  return note.rects.map(([x, y, w, h], i) => {
+export function NoteHighlight({ note, rects, src, state }: NoteHighlightProps) {
+  return rects.map(([x, y, w, h], i) => {
     const hh = h * 1.2
     return (
       <div

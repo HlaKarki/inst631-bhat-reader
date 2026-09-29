@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "sync": "cp ../part3-reader/data.json src/data/paper.json && rm -rf public/pages && cp -R ../part3-reader/pages public/pages",
+    "sync": "cp ../part3-reader/data.json src/data/paper.json && rm -rf public/pages && cp -R ../part3-reader/pages public/pages && rm -rf public/strips && cp -R ../part3-reader/strips public/strips",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
