@@ -3,6 +3,8 @@
 @theme {
   --color-ground: #f3f3f1;
   --color-ink: #1c1c1a;
+
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 /* Highlights pick these by category name at runtime, so they stay plain variables Tailwind can't tree-shake. */
