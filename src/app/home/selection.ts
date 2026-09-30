@@ -1,9 +1,9 @@
 import { paper } from '@/data/paper'
 
-export type Selection = { page: number; notes: number[]; pinned: boolean }
+export type Selection = { page: number; notes: number[] }
 
 // Notes that share a highlight open together, so stepping moves group by group.
-const groups = new Map<string, { page: number; notes: number[] }>()
+const groups = new Map<string, Selection>()
 for (const note of paper.notes) {
   const key = `${note.page}:${JSON.stringify(note.rects)}`
   const group = groups.get(key) ?? { page: note.page, notes: [] }

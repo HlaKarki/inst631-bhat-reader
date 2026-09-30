@@ -15,7 +15,6 @@ type SheetProps = {
   strips: Strip[]
   cats: Record<string, string>
   selection: Selection | null
-  onHover: (notes: number[]) => void
   onPick: (notes: number[]) => void
   onStep: (dir: 1 | -1) => void
 }
@@ -30,7 +29,7 @@ const inside = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect) => {
 
 const toFrame = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect): Rect => [(x - sx) / sw, (y - sy) / sh, w / sw, h / sh]
 
-export function Sheet({ page, notes, strips, cats, selection, onHover, onPick, onStep }: SheetProps) {
+export function Sheet({ page, notes, strips, cats, selection, onPick, onStep }: SheetProps) {
   // The card keeps the last selection it showed so it can fade out with its content still in it.
   const [shown, setShown] = useState<Selection | null>(null)
   if (selection && selection !== shown) setShown(selection)
@@ -57,9 +56,6 @@ export function Sheet({ page, notes, strips, cats, selection, onHover, onPick, o
       className={cn('relative w-full max-w-204', 'bg-white shadow-[0_1px_4px_rgb(0_0_0/0.15)]')}
       id={`p${page}`}
       onClick={(e) => onPick(hitsAt(e))}
-      // Touch has no hover and fires pointermove on every scroll and pointerleave after every tap, so only taps count.
-      onPointerMove={(e) => e.pointerType !== 'touch' && onHover(hitsAt(e))}
-      onPointerLeave={(e) => e.pointerType !== 'touch' && onHover([])}
     >
       {frames.map(({ box, src }) => (
         <div
@@ -102,7 +98,7 @@ export function Sheet({ page, notes, strips, cats, selection, onHover, onPick, o
           notes={notes.filter((n) => shown.notes.includes(n.n))}
           cats={cats}
           open={on}
-          nav={shown.pinned ? { at: stopIndex(shown.notes) + 1, total: stops.length, onStep } : undefined}
+          nav={{ at: stopIndex(shown.notes) + 1, total: stops.length, onStep }}
         />
       )}
     </section>

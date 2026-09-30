@@ -48,42 +48,11 @@
           0.2242,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 1
     },
     {
       "n": 2,
-      "page": 1,
-      "cat": "def",
-      "text": "What does digital wellbeing even mean? It's a research area asking how people stay healthy and balanced when so much of life runs through screens. And it's not the same thing as \"use your phone less\" (which is kind of the whole point of the paper).",
-      "rects": [
-        [
-          0.7437,
-          0.7185,
-          0.1683,
-          0.0114
-        ],
-        [
-          0.5195,
-          0.7325,
-          0.3929,
-          0.0112
-        ],
-        [
-          0.5195,
-          0.7463,
-          0.395,
-          0.0112
-        ],
-        [
-          0.5195,
-          0.76,
-          0.2335,
-          0.0114
-        ]
-      ]
-    },
-    {
-      "n": 3,
       "page": 1,
       "cat": "def",
       "text": "What's a probe? Not a finished app. It's a simple tool people use in real life for a short time so the researchers can learn from how they use it (they define it in section 3.1). WellScreen is one.",
@@ -118,10 +87,11 @@
           0.2242,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 3
     },
     {
-      "n": 4,
+      "n": 3,
       "page": 1,
       "cat": "results",
       "text": "What's positive affect, and is 10% a lot? It's a questionnaire score (PANAS) of how many positive feelings you report. The median went from 29 to 34 out of 50 for the 20 people who finished, over two weeks (Table 7). So it's modest amount I would say.",
@@ -150,10 +120,11 @@
           0.3565,
           0.0118
         ]
-      ]
+      ],
+      "ledger": 4
     },
     {
-      "n": 5,
+      "n": 4,
       "page": 1,
       "cat": "prior",
       "text": "Why the quotes around technology panics? Orben (reference no.65) showed that novels, radio, TV and games each set off a cycle of alarm that eventually faded. I think the authors are basically signalling they don't take the alarm at face value.",
@@ -182,7 +153,41 @@
           0.2205,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 5
+    },
+    {
+      "n": 5,
+      "page": 1,
+      "cat": "def",
+      "text": "What does digital wellbeing even mean? It's a research area asking how people stay healthy and balanced when so much of life runs through screens. And it's not the same thing as \"use your phone less\" (which is kind of the whole point of the paper).",
+      "rects": [
+        [
+          0.7437,
+          0.7185,
+          0.1683,
+          0.0114
+        ],
+        [
+          0.5195,
+          0.7325,
+          0.3929,
+          0.0112
+        ],
+        [
+          0.5195,
+          0.7463,
+          0.395,
+          0.0112
+        ],
+        [
+          0.5195,
+          0.76,
+          0.2335,
+          0.0114
+        ]
+      ],
+      "ledger": 2
     },
     {
       "n": 6,
@@ -220,7 +225,8 @@
           0.1272,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 6
     },
     {
       "n": 7,
@@ -252,7 +258,8 @@
           0.3614,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 7
     },
     {
       "n": 8,
@@ -296,7 +303,8 @@
           0.2842,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 8
     },
     {
       "n": 9,
@@ -340,36 +348,11 @@
           0.3165,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 9
     },
     {
       "n": 10,
-      "page": 2,
-      "cat": "results",
-      "text": "What are SUS and IAM? Two standard questionnaires. SUS scores how usable something is (0 to 100, and 80 is good). IAM scores whether a tool feels right for its purpose (4 to 20, and 14 is kind of middling). They explain both in 6.1.1.",
-      "rects": [
-        [
-          0.7895,
-          0.4004,
-          0.125,
-          0.0112
-        ],
-        [
-          0.5195,
-          0.4137,
-          0.3926,
-          0.0118
-        ],
-        [
-          0.5195,
-          0.4281,
-          0.2666,
-          0.0112
-        ]
-      ]
-    },
-    {
-      "n": 11,
       "page": 2,
       "cat": "mine",
       "text": "Is the stress finding really about self-awareness? or maybe just about being asked to predict every single morning?",
@@ -392,7 +375,35 @@
           0.2664,
           0.0112
         ]
-      ]
+      ],
+      "ledger": 11
+    },
+    {
+      "n": 11,
+      "page": 2,
+      "cat": "results",
+      "text": "What are SUS and IAM? Two standard questionnaires. SUS scores how usable something is (0 to 100, and 80 is good). IAM scores whether a tool feels right for its purpose (4 to 20, and 14 is kind of middling). They explain both in 6.1.1.",
+      "rects": [
+        [
+          0.7895,
+          0.4004,
+          0.125,
+          0.0112
+        ],
+        [
+          0.5195,
+          0.4137,
+          0.3926,
+          0.0118
+        ],
+        [
+          0.5195,
+          0.4281,
+          0.2666,
+          0.0112
+        ]
+      ],
+      "ledger": 10
     },
     {
       "n": 12,
@@ -412,7 +423,8 @@
           0.3141,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 12
     },
     {
       "n": 13,
@@ -456,7 +468,8 @@
           0.3282,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 13
     },
     {
       "n": 14,
@@ -494,7 +507,8 @@
           0.0961,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 14
     },
     {
       "n": 15,
@@ -532,7 +546,8 @@
           0.3606,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 15
     },
     {
       "n": 16,
@@ -558,7 +573,8 @@
           0.1917,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 16
     },
     {
       "n": 17,
@@ -596,7 +612,8 @@
           0.3948,
           0.0112
         ]
-      ]
+      ],
+      "ledger": 17
     },
     {
       "n": 18,
@@ -634,7 +651,8 @@
           0.0233,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 18
     },
     {
       "n": 19,
@@ -672,10 +690,32 @@
           0.0233,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 19
     },
     {
       "n": 20,
+      "page": 6,
+      "cat": "mine",
+      "text": "18 of 25 identify as Asian, and one participant is 50 to 65 in a college sample. Maybe P21 alone is driving the age coefficients in Tables 4 and 5?",
+      "rects": [
+        [
+          0.0874,
+          0.1068,
+          0.8264,
+          0.0114
+        ],
+        [
+          0.0879,
+          0.1207,
+          0.107,
+          0.0113
+        ]
+      ],
+      "ledger": 22
+    },
+    {
+      "n": 21,
       "page": 6,
       "cat": "method",
       "text": "What are these four scales? Standard psych questionnaires taken at entry and exit. BFI-10 is Big Five personality in ten questions, SSRQ is self-regulation (how well you manage goals), BSCS is self-control (resisting impulses), and PANAS-SF is positive and negative mood. They basically let the authors compare people on the same footing.",
@@ -704,10 +744,11 @@
           0.0763,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 20
     },
     {
-      "n": 21,
+      "n": 22,
       "page": 6,
       "cat": "method",
       "text": "What's a covariate? A trait they measure so the analysis can separate its effect from the tool's effect. Like, is the gap smaller because of the app, or because that person is just naturally disciplined?",
@@ -742,27 +783,8 @@
           0.2705,
           0.0113
         ]
-      ]
-    },
-    {
-      "n": 22,
-      "page": 6,
-      "cat": "mine",
-      "text": "18 of 25 identify as Asian, and one participant is 50 to 65 in a college sample. Maybe P21 alone is driving the age coefficients in Tables 4 and 5?",
-      "rects": [
-        [
-          0.0874,
-          0.1068,
-          0.8264,
-          0.0114
-        ],
-        [
-          0.0879,
-          0.1207,
-          0.107,
-          0.0113
-        ]
-      ]
+      ],
+      "ledger": 21
     },
     {
       "n": 23,
@@ -794,108 +816,11 @@
           0.1306,
           0.0118
         ]
-      ]
+      ],
+      "ledger": 23
     },
     {
       "n": 24,
-      "page": 7,
-      "cat": "def",
-      "text": "What's a t-test? Basically a statistics check for whether two numbers really differ, or whether the difference could just be chance. \"Paired\" means each person gets compared with themselves (their own guess against their own actual use), not with other people.",
-      "rects": [
-        [
-          0.69,
-          0.2317,
-          0.2221,
-          0.0139
-        ],
-        [
-          0.5195,
-          0.2482,
-          0.3948,
-          0.0113
-        ]
-      ]
-    },
-    {
-      "n": 25,
-      "page": 7,
-      "cat": "method",
-      "text": "What's a mixed-effects model? A statistical model built for when the same person gives you 14 days of data. It separates differences between people from day to day changes within one person.",
-      "rects": [
-        [
-          0.5358,
-          0.262,
-          0.3763,
-          0.0112
-        ],
-        [
-          0.5195,
-          0.2759,
-          0.3926,
-          0.0112
-        ],
-        [
-          0.5195,
-          0.2896,
-          0.1451,
-          0.0114
-        ]
-      ]
-    },
-    {
-      "n": 26,
-      "page": 7,
-      "cat": "method",
-      "text": "What's thematic analysis, and what are codes? Codes are short labels stuck on bits of interview text, like tagging a quote \"felt guilty\" or \"phone before bed\". Thematic analysis is grouping hundreds of those tags into a few bigger patterns (themes) that answer the research questions. Here two authors did the grouping, going from 1,068 codes down to 5 themes.",
-      "rects": [
-        [
-          0.694,
-          0.5477,
-          0.2181,
-          0.0114
-        ],
-        [
-          0.5195,
-          0.5617,
-          0.3926,
-          0.0113
-        ],
-        [
-          0.5195,
-          0.5754,
-          0.0374,
-          0.0114
-        ]
-      ]
-    },
-    {
-      "n": 27,
-      "page": 7,
-      "cat": "method",
-      "text": "Attrition: 5 of the 25 dropped out, so most results are really about the 20 who finished. Only 9 logged 14 days in a row, the rest took about 16 days.",
-      "rects": [
-        [
-          0.2532,
-          0.4973,
-          0.2272,
-          0.0112
-        ],
-        [
-          0.0879,
-          0.5111,
-          0.3926,
-          0.0112
-        ],
-        [
-          0.0879,
-          0.5249,
-          0.3448,
-          0.0113
-        ]
-      ]
-    },
-    {
-      "n": 28,
       "page": 7,
       "cat": "mine",
       "text": "Why type the numbers in by hand instead of just reading Screen Time directly? Maybe the chore of entering them is itself the reflection? or maybe the reason five people quit.",
@@ -930,7 +855,110 @@
           0.1529,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 28
+    },
+    {
+      "n": 25,
+      "page": 7,
+      "cat": "method",
+      "text": "Attrition: 5 of the 25 dropped out, so most results are really about the 20 who finished. Only 9 logged 14 days in a row, the rest took about 16 days.",
+      "rects": [
+        [
+          0.2532,
+          0.4973,
+          0.2272,
+          0.0112
+        ],
+        [
+          0.0879,
+          0.5111,
+          0.3926,
+          0.0112
+        ],
+        [
+          0.0879,
+          0.5249,
+          0.3448,
+          0.0113
+        ]
+      ],
+      "ledger": 27
+    },
+    {
+      "n": 26,
+      "page": 7,
+      "cat": "def",
+      "text": "What's a t-test? Basically a statistics check for whether two numbers really differ, or whether the difference could just be chance. \"Paired\" means each person gets compared with themselves (their own guess against their own actual use), not with other people.",
+      "rects": [
+        [
+          0.69,
+          0.2317,
+          0.2221,
+          0.0139
+        ],
+        [
+          0.5195,
+          0.2482,
+          0.3948,
+          0.0113
+        ]
+      ],
+      "ledger": 24
+    },
+    {
+      "n": 27,
+      "page": 7,
+      "cat": "method",
+      "text": "What's a mixed-effects model? A statistical model built for when the same person gives you 14 days of data. It separates differences between people from day to day changes within one person.",
+      "rects": [
+        [
+          0.5358,
+          0.262,
+          0.3763,
+          0.0112
+        ],
+        [
+          0.5195,
+          0.2759,
+          0.3926,
+          0.0112
+        ],
+        [
+          0.5195,
+          0.2896,
+          0.1451,
+          0.0114
+        ]
+      ],
+      "ledger": 25
+    },
+    {
+      "n": 28,
+      "page": 7,
+      "cat": "method",
+      "text": "What's thematic analysis, and what are codes? Codes are short labels stuck on bits of interview text, like tagging a quote \"felt guilty\" or \"phone before bed\". Thematic analysis is grouping hundreds of those tags into a few bigger patterns (themes) that answer the research questions. Here two authors did the grouping, going from 1,068 codes down to 5 themes.",
+      "rects": [
+        [
+          0.694,
+          0.5477,
+          0.2181,
+          0.0114
+        ],
+        [
+          0.5195,
+          0.5617,
+          0.3926,
+          0.0113
+        ],
+        [
+          0.5195,
+          0.5754,
+          0.0374,
+          0.0114
+        ]
+      ],
+      "ledger": 26
     },
     {
       "n": 29,
@@ -962,10 +990,38 @@
           0.3366,
           0.0115
         ]
-      ]
+      ],
+      "ledger": 29
     },
     {
       "n": 30,
+      "page": 8,
+      "cat": "mine",
+      "text": "Why would students underestimate social use now when Facebook users in 2020 overestimated it? Maybe short-video autoplay? Maybe messaging apps getting counted as Social? The paper doesn't test either.",
+      "rects": [
+        [
+          0.1226,
+          0.571,
+          0.3579,
+          0.0114
+        ],
+        [
+          0.0879,
+          0.5849,
+          0.3926,
+          0.0113
+        ],
+        [
+          0.0879,
+          0.5987,
+          0.1432,
+          0.0113
+        ]
+      ],
+      "ledger": 32
+    },
+    {
+      "n": 31,
       "page": 8,
       "cat": "results",
       "text": "What does it mean that self-control was significant? People who scored higher on the self-control questionnaire guessed their use more accurately. Nothing else they measured (age, sex, phone type, personality) reliably predicted the gap.",
@@ -1000,10 +1056,50 @@
           0.296,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 30
     },
     {
-      "n": 31,
+      "n": 32,
+      "page": 8,
+      "cat": "mine",
+      "text": "The paper gives this as -1.3E-3 per minute of gap, which is really hard to picture. Worked out, a whole hour of misjudging your phone use moves daily satisfaction by less than a tenth of a point. So \"linked with higher satisfaction\" is true on paper, but I'd want effects like this reported in units I can actually feel and understand.",
+      "rects": [
+        [
+          0.8363,
+          0.7601,
+          0.0758,
+          0.0113
+        ],
+        [
+          0.5191,
+          0.774,
+          0.3955,
+          0.0113
+        ],
+        [
+          0.5195,
+          0.7852,
+          0.3926,
+          0.0139
+        ],
+        [
+          0.5195,
+          0.8017,
+          0.3926,
+          0.0112
+        ],
+        [
+          0.5195,
+          0.8154,
+          0.2314,
+          0.0113
+        ]
+      ],
+      "ledger": 33
+    },
+    {
+      "n": 33,
       "page": 8,
       "cat": "results",
       "text": "This was the result I found most interesting. Guessing accurately went with feeling satisfied and in control, but also with feeling more stressed and less able to keep to goals. Section 7.1.1 kind of wrestles with it.",
@@ -1044,71 +1140,8 @@
           0.3018,
           0.0113
         ]
-      ]
-    },
-    {
-      "n": 32,
-      "page": 8,
-      "cat": "mine",
-      "text": "Why would students underestimate social use now when Facebook users in 2020 overestimated it? Maybe short-video autoplay? Maybe messaging apps getting counted as Social? The paper doesn't test either.",
-      "rects": [
-        [
-          0.1226,
-          0.571,
-          0.3579,
-          0.0114
-        ],
-        [
-          0.0879,
-          0.5849,
-          0.3926,
-          0.0113
-        ],
-        [
-          0.0879,
-          0.5987,
-          0.1432,
-          0.0113
-        ]
-      ]
-    },
-    {
-      "n": 33,
-      "page": 8,
-      "cat": "mine",
-      "text": "The paper gives this as -1.3E-3 per minute of gap, which is really hard to picture. Worked out, a whole hour of misjudging your phone use moves daily satisfaction by less than a tenth of a point. So \"linked with higher satisfaction\" is true on paper, but I'd want effects like this reported in units I can actually feel and understand.",
-      "rects": [
-        [
-          0.8363,
-          0.7601,
-          0.0758,
-          0.0113
-        ],
-        [
-          0.5191,
-          0.774,
-          0.3955,
-          0.0113
-        ],
-        [
-          0.5195,
-          0.7852,
-          0.3926,
-          0.0139
-        ],
-        [
-          0.5195,
-          0.8017,
-          0.3926,
-          0.0112
-        ],
-        [
-          0.5195,
-          0.8154,
-          0.2314,
-          0.0113
-        ]
-      ]
+      ],
+      "ledger": 31
     },
     {
       "n": 34,
@@ -1128,7 +1161,8 @@
           0.3721,
           0.0138
         ]
-      ]
+      ],
+      "ledger": 34
     },
     {
       "n": 35,
@@ -1160,10 +1194,44 @@
           0.126,
           0.0139
         ]
-      ]
+      ],
+      "ledger": 35
     },
     {
       "n": 36,
+      "page": 10,
+      "cat": "mine",
+      "text": "The self-discrepancy explanation cuts both ways I would say.",
+      "rects": [
+        [
+          0.2178,
+          0.6645,
+          0.2652,
+          0.0114
+        ],
+        [
+          0.0879,
+          0.6785,
+          0.3929,
+          0.0112
+        ],
+        [
+          0.0879,
+          0.6923,
+          0.395,
+          0.0112
+        ],
+        [
+          0.0879,
+          0.7061,
+          0.3948,
+          0.0113
+        ]
+      ],
+      "ledger": 37
+    },
+    {
+      "n": 37,
       "page": 10,
       "cat": "prior",
       "text": "What's self-discrepancy theory? Higgins (1989): distress comes from the gap between who you are and who you think you should be, and reflecting can shrink the gap you feel without changing what you do. That's how the authors explain mood getting better while habits stayed the same.",
@@ -1204,39 +1272,8 @@
           0.1751,
           0.0112
         ]
-      ]
-    },
-    {
-      "n": 37,
-      "page": 10,
-      "cat": "mine",
-      "text": "The self-discrepancy explanation cuts both ways I would say.",
-      "rects": [
-        [
-          0.2178,
-          0.6645,
-          0.2652,
-          0.0114
-        ],
-        [
-          0.0879,
-          0.6785,
-          0.3929,
-          0.0112
-        ],
-        [
-          0.0879,
-          0.6923,
-          0.395,
-          0.0112
-        ],
-        [
-          0.0879,
-          0.7061,
-          0.3948,
-          0.0113
-        ]
-      ]
+      ],
+      "ledger": 36
     },
     {
       "n": 38,
@@ -1262,10 +1299,32 @@
           0.3662,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 38
     },
     {
       "n": 39,
+      "page": 12,
+      "cat": "mine",
+      "text": "Screen time can't tell the difference between using your phone to cope (getting away from a rough day) and using it out of mindless habit, since both just show up as minutes. If a tool treats all of it as \"too much\", it could end up shaming someone for coping, which could genuinely do harm. So I'd want a design that tells the two apart without asking the person every single time.",
+      "rects": [
+        [
+          0.6454,
+          0.1097,
+          0.2671,
+          0.0114
+        ],
+        [
+          0.5195,
+          0.1236,
+          0.3916,
+          0.0113
+        ]
+      ],
+      "ledger": 40
+    },
+    {
+      "n": 40,
       "page": 12,
       "cat": "method",
       "text": "What's fidelity? How polished a prototype is. WellScreen was a rough web app that glitched, which probably dragged the usability score down, and it's part of why the authors call the study formative.",
@@ -1294,27 +1353,8 @@
           0.0619,
           0.0113
         ]
-      ]
-    },
-    {
-      "n": 40,
-      "page": 12,
-      "cat": "mine",
-      "text": "Screen time can't tell the difference between using your phone to cope (getting away from a rough day) and using it out of mindless habit, since both just show up as minutes. If a tool treats all of it as \"too much\", it could end up shaming someone for coping, which could genuinely do harm. So I'd want a design that tells the two apart without asking the person every single time.",
-      "rects": [
-        [
-          0.6454,
-          0.1097,
-          0.2671,
-          0.0114
-        ],
-        [
-          0.5195,
-          0.1236,
-          0.3916,
-          0.0113
-        ]
-      ]
+      ],
+      "ledger": 39
     },
     {
       "n": 41,
@@ -1334,7 +1374,8 @@
           0.283,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 41
     },
     {
       "n": 42,
@@ -1360,7 +1401,8 @@
           0.0878,
           0.0114
         ]
-      ]
+      ],
+      "ledger": 42
     },
     {
       "n": 43,
@@ -1374,7 +1416,8 @@
           0.3143,
           0.01
         ]
-      ]
+      ],
+      "ledger": 43
     },
     {
       "n": 44,
@@ -1400,7 +1443,8 @@
           0.3948,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 44
     },
     {
       "n": 45,
@@ -1438,10 +1482,38 @@
           0.0307,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 45
     },
     {
       "n": 46,
+      "page": 15,
+      "cat": "mine",
+      "text": "The design tension here: the people who need it least find it a chore, and the person who needs it most (P9) felt sad looking at the numbers. So who's the target user?",
+      "rects": [
+        [
+          0.8339,
+          0.2226,
+          0.0781,
+          0.0113
+        ],
+        [
+          0.5195,
+          0.236,
+          0.3926,
+          0.0118
+        ],
+        [
+          0.5195,
+          0.2502,
+          0.1686,
+          0.0114
+        ]
+      ],
+      "ledger": 47
+    },
+    {
+      "n": 47,
       "page": 15,
       "cat": "policy",
       "text": "Policy angle: if a school or employer rolled out a tool like this, it could feel pointless to disciplined people and punishing to everyone else. The authors warn against tying it to performance reviews.",
@@ -1476,33 +1548,8 @@
           0.2864,
           0.0113
         ]
-      ]
-    },
-    {
-      "n": 47,
-      "page": 15,
-      "cat": "mine",
-      "text": "The design tension here: the people who need it least find it a chore, and the person who needs it most (P9) felt sad looking at the numbers. So who's the target user?",
-      "rects": [
-        [
-          0.8339,
-          0.2226,
-          0.0781,
-          0.0113
-        ],
-        [
-          0.5195,
-          0.236,
-          0.3926,
-          0.0118
-        ],
-        [
-          0.5195,
-          0.2502,
-          0.1686,
-          0.0114
-        ]
-      ]
+      ],
+      "ledger": 46
     },
     {
       "n": 48,
@@ -1528,7 +1575,8 @@
           0.3501,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 48
     },
     {
       "n": 49,
@@ -1560,7 +1608,8 @@
           0.1838,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 49
     },
     {
       "n": 50,
@@ -1592,7 +1641,8 @@
           0.0906,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 50
     },
     {
       "n": 51,
@@ -1618,7 +1668,8 @@
           0.0386,
           0.0113
         ]
-      ]
+      ],
+      "ledger": 51
     }
   ],
   "toc": [

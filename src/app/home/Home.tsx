@@ -9,17 +9,10 @@ export default function Home() {
   const [active, setActive] = useState<Selection | null>(null)
   const target = useRef<number | null>(null)
 
-  const hover = (page: number, notes: number[]) =>
-    setActive((prev) => {
-      if (prev?.pinned) return prev
-      if (notes.length === 0) return prev?.page === page ? null : prev
-      return prev?.page === page && sameList(prev.notes, notes) ? prev : { page, notes, pinned: false }
-    })
-
   const pick = (page: number, notes: number[]) =>
     setActive((prev) => {
       if (notes.length === 0) return null
-      return prev?.pinned && prev.page === page && sameList(prev.notes, notes) ? prev : { page, notes, pinned: true }
+      return prev?.page === page && sameList(prev.notes, notes) ? prev : { page, notes }
     })
 
   const step = (dir: 1 | -1) => {
@@ -27,7 +20,7 @@ export default function Home() {
     const next = stops[stopIndex(active.notes) + dir]
     if (!next) return
     target.current = next.notes[0]
-    setActive({ ...next, pinned: true })
+    setActive(next)
   }
 
   useEffect(() => {
@@ -61,7 +54,6 @@ export default function Home() {
             strips={paper.strips.filter((s) => s.page === p)}
             cats={paper.cats}
             selection={active?.page === p ? active : null}
-            onHover={(notes) => hover(p, notes)}
             onPick={(notes) => pick(p, notes)}
             onStep={step}
           />

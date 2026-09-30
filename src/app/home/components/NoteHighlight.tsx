@@ -18,7 +18,7 @@ export function NoteHighlight({ note, rects, src, state }: NoteHighlightProps) {
       <div
         key={i}
         data-note={note.n}
-        className={cn('absolute', state === 'lit' && 'z-2')}
+        className={cn('absolute cursor-pointer', state === 'lit' && 'z-2')}
         style={
           {
             left: `${x * 100}%`,
