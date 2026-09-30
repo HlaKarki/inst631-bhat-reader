@@ -1,20 +1,26 @@
 import { useState } from 'react'
-import type { PointerEvent } from 'react'
+import type { MouseEvent } from 'react'
 import { paper } from '@/data/paper'
 import type { Note, Rect, Strip } from '@/lib/types'
-import { cn, sameList } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { NoteCard } from '@/app/home/components/NoteCard'
 import { NoteHighlight } from '@/app/home/components/NoteHighlight'
+import { stopIndex, stops } from '@/app/home/selection'
+import type { Selection } from '@/app/home/selection'
 
 type SheetProps = {
   page: number
   notes: Note[]
   strips: Strip[]
   cats: Record<string, string>
-  active: number[]
+  selection: Selection | null
+  onHover: (notes: number[]) => void
   onPick: (notes: number[]) => void
+  onStep: (dir: 1 | -1) => void
 }
+
+const none: number[] = []
 
 const inside = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect) => {
   const cx = x + w / 2
@@ -24,10 +30,11 @@ const inside = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect) => {
 
 const toFrame = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect): Rect => [(x - sx) / sw, (y - sy) / sh, w / sw, h / sh]
 
-export function Sheet({ page, notes, strips, cats, active, onPick }: SheetProps) {
-  // The card keeps the last notes it showed so it can fade out with its content still in it.
-  const [shown, setShown] = useState<number[]>([])
-  if (active.length > 0 && !sameList(active, shown)) setShown(active)
+export function Sheet({ page, notes, strips, cats, selection, onHover, onPick, onStep }: SheetProps) {
+  // The card keeps the last selection it showed so it can fade out with its content still in it.
+  const [shown, setShown] = useState<Selection | null>(null)
+  if (selection && selection !== shown) setShown(selection)
+  const active = selection?.notes ?? none
   const phone = useMediaQuery('(max-width: 639px)')
   const on = active.length > 0
 
@@ -36,23 +43,23 @@ export function Sheet({ page, notes, strips, cats, active, onPick }: SheetProps)
     ? strips
     : [{ page, box: [0, 0, 1, 1], src: `pages/p${String(page).padStart(2, '0')}.jpg` }]
 
-  const pick = (e: PointerEvent<HTMLElement>) => {
+  const hitsAt = (e: MouseEvent<HTMLElement>) => {
     const sheet = e.currentTarget
     const hits = new Set<number>()
     for (const el of document.elementsFromPoint(e.clientX, e.clientY)) {
       if (el instanceof HTMLElement && el.dataset.note && sheet.contains(el)) hits.add(Number(el.dataset.note))
     }
-    onPick(notes.filter((n) => hits.has(n.n)).map((n) => n.n))
+    return notes.filter((n) => hits.has(n.n)).map((n) => n.n)
   }
 
   return (
     <section
       className={cn('relative w-full max-w-204', 'bg-white shadow-[0_1px_4px_rgb(0_0_0/0.15)]')}
       id={`p${page}`}
-      onPointerMove={pick}
-      onPointerDown={pick}
-      // Touch fires pointerleave right after every tap, so keep the card open until the next tap.
-      onPointerLeave={(e) => e.pointerType !== 'touch' && onPick([])}
+      onClick={(e) => onPick(hitsAt(e))}
+      // Touch has no hover and fires pointermove on every scroll and pointerleave after every tap, so only taps count.
+      onPointerMove={(e) => e.pointerType !== 'touch' && onHover(hitsAt(e))}
+      onPointerLeave={(e) => e.pointerType !== 'touch' && onHover([])}
     >
       {frames.map(({ box, src }) => (
         <div
@@ -90,7 +97,14 @@ export function Sheet({ page, notes, strips, cats, active, onPick }: SheetProps)
           on ? 'opacity-100' : 'opacity-0',
         )}
       />
-      {shown.length > 0 && <NoteCard notes={notes.filter((n) => shown.includes(n.n))} cats={cats} open={on} />}
+      {shown && (
+        <NoteCard
+          notes={notes.filter((n) => shown.notes.includes(n.n))}
+          cats={cats}
+          open={on}
+          nav={shown.pinned ? { at: stopIndex(shown.notes) + 1, total: stops.length, onStep } : undefined}
+        />
+      )}
     </section>
   )
 }

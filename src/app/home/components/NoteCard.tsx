@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { ComponentProps, CSSProperties } from 'react'
 import type { Note } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -6,9 +6,10 @@ type NoteCardProps = {
   notes: Note[]
   cats: Record<string, string>
   open: boolean
+  nav?: { at: number; total: number; onStep: (dir: 1 | -1) => void }
 }
 
-export function NoteCard({ notes, cats, open }: NoteCardProps) {
+export function NoteCard({ notes, cats, open, nav }: NoteCardProps) {
   const rects = notes.flatMap((n) => n.rects)
   const left = Math.min(...rects.map(([x]) => x))
   const right = Math.max(...rects.map(([x, , w]) => x + w))
@@ -50,11 +51,13 @@ export function NoteCard({ notes, cats, open }: NoteCardProps) {
         origin,
         open ? 'duration-200' : 'duration-120',
         open ? 'opacity-100 max-sm:pointer-events-auto' : tucked,
+        open && nav && 'pointer-events-auto',
         'starting:opacity-0 max-sm:motion-safe:starting:translate-y-3 sm:motion-safe:starting:scale-96',
       )}
       style={place}
-      // The card lives inside the page element, so stop its taps from re-running the page's note picker.
-      onPointerDown={(e) => e.stopPropagation()}
+      inert={!open}
+      // The card lives inside the page element, so stop its clicks from re-running the page's note picker.
+      onClick={(e) => e.stopPropagation()}
       onPointerMove={(e) => e.stopPropagation()}
     >
       {notes.map((note) => (
@@ -69,6 +72,33 @@ export function NoteCard({ notes, cats, open }: NoteCardProps) {
           <p>{note.text}</p>
         </div>
       ))}
+      {nav && (
+        <nav className={cn('flex items-center justify-between gap-2', 'border-t border-ink/10 pt-2', 'text-xs')}>
+          <StepButton disabled={nav.at === 1} onClick={() => nav.onStep(-1)}>
+            Prev
+          </StepButton>
+          <span className="text-ink/60 tabular-nums">
+            {nav.at} of {nav.total}
+          </span>
+          <StepButton disabled={nav.at === nav.total} onClick={() => nav.onStep(1)}>
+            Next
+          </StepButton>
+        </nav>
+      )}
     </aside>
+  )
+}
+
+function StepButton(props: ComponentProps<'button'>) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        'rounded px-2 py-1 font-medium max-sm:px-3 max-sm:py-2',
+        'transition-colors duration-150 ease-out',
+        'enabled:hover:bg-ink/5 disabled:opacity-40',
+      )}
+      {...props}
+    />
   )
 }
