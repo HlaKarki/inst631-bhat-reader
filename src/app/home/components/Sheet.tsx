@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { MouseEvent } from 'react'
 import { paper } from '@/data/paper'
-import type { Note, Rect, Strip } from '@/lib/types'
+import type { Note, Rect, Strip, TocEntry } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { NoteCard } from '@/app/home/components/NoteCard'
@@ -13,11 +13,13 @@ type SheetProps = {
   page: number
   notes: Note[]
   strips: Strip[]
+  sections: (TocEntry & { i: number })[]
   cats: Record<string, string>
   selection: Selection | null
   onPick: (notes: number[]) => void
   onStep: (dir: 1 | -1) => void
   onClose: () => void
+  onMenu: () => void
 }
 
 const none: number[] = []
@@ -30,7 +32,7 @@ const inside = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect) => {
 
 const toFrame = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect): Rect => [(x - sx) / sw, (y - sy) / sh, w / sw, h / sh]
 
-export function Sheet({ page, notes, strips, cats, selection, onPick, onStep, onClose }: SheetProps) {
+export function Sheet({ page, notes, strips, sections, cats, selection, onPick, onStep, onClose, onMenu }: SheetProps) {
   // The card keeps the last selection it showed so it can fade out with its content still in it.
   const [shown, setShown] = useState<Selection | null>(null)
   if (selection && selection !== shown) setShown(selection)
@@ -75,6 +77,25 @@ export function Sheet({ page, notes, strips, cats, selection, onPick, onStep, on
             loading={page <= 2 ? 'eager' : 'lazy'}
             className={cn('block w-full', 'transition-[filter] duration-200 ease-out', on && 'blur-[3px]')}
           />
+          {sections.map((section) => {
+            // The heading's anchor point sits on its top edge, so nudge it inward to land in the right strip.
+            const point: Rect = [section.x + 0.01, section.y + 0.01, 0, 0]
+            if (!inside(point, box)) return null
+            const [x, y] = toFrame([section.x, section.y, 0, 0], box)
+            return (
+              <span
+                key={section.i}
+                id={`section-${section.i}`}
+                role="heading"
+                aria-level={section.level + 1}
+                tabIndex={-1}
+                className="absolute scroll-mt-16 outline-none"
+                style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
+              >
+                <span className="sr-only">{section.title}</span>
+              </span>
+            )
+          })}
           {notes.map((note) => {
             const own = note.rects.map((r, i) => ({ r, i })).filter(({ r }) => inside(r, box))
             const stop = stopOf(note.n)
@@ -118,6 +139,7 @@ export function Sheet({ page, notes, strips, cats, selection, onPick, onStep, on
           id={cardId}
           label={describe(shown.notes)}
           onClose={onClose}
+          onMenu={onMenu}
           notes={notes.filter((n) => shown.notes.includes(n.n))}
           cats={cats}
           open={on}

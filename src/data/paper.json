@@ -49,7 +49,8 @@
           0.0114
         ]
       ],
-      "ledger": 1
+      "ledger": 1,
+      "section": 0
     },
     {
       "n": 2,
@@ -88,7 +89,8 @@
           0.0114
         ]
       ],
-      "ledger": 3
+      "ledger": 3,
+      "section": 0
     },
     {
       "n": 3,
@@ -121,7 +123,8 @@
           0.0118
         ]
       ],
-      "ledger": 4
+      "ledger": 4,
+      "section": 0
     },
     {
       "n": 4,
@@ -154,7 +157,8 @@
           0.0114
         ]
       ],
-      "ledger": 5
+      "ledger": 5,
+      "section": 1
     },
     {
       "n": 5,
@@ -187,7 +191,8 @@
           0.0114
         ]
       ],
-      "ledger": 2
+      "ledger": 2,
+      "section": 1
     },
     {
       "n": 6,
@@ -226,7 +231,8 @@
           0.0114
         ]
       ],
-      "ledger": 6
+      "ledger": 6,
+      "section": 1
     },
     {
       "n": 7,
@@ -259,7 +265,8 @@
           0.0114
         ]
       ],
-      "ledger": 7
+      "ledger": 7,
+      "section": 1
     },
     {
       "n": 8,
@@ -304,7 +311,8 @@
           0.0113
         ]
       ],
-      "ledger": 8
+      "ledger": 8,
+      "section": 1
     },
     {
       "n": 9,
@@ -349,7 +357,8 @@
           0.0114
         ]
       ],
-      "ledger": 9
+      "ledger": 9,
+      "section": 1
     },
     {
       "n": 10,
@@ -376,7 +385,8 @@
           0.0112
         ]
       ],
-      "ledger": 11
+      "ledger": 11,
+      "section": 1
     },
     {
       "n": 11,
@@ -403,7 +413,8 @@
           0.0112
         ]
       ],
-      "ledger": 10
+      "ledger": 10,
+      "section": 1
     },
     {
       "n": 12,
@@ -424,7 +435,8 @@
           0.0113
         ]
       ],
-      "ledger": 12
+      "ledger": 12,
+      "section": 3
     },
     {
       "n": 13,
@@ -469,7 +481,8 @@
           0.0113
         ]
       ],
-      "ledger": 13
+      "ledger": 13,
+      "section": 4
     },
     {
       "n": 14,
@@ -508,7 +521,8 @@
           0.0113
         ]
       ],
-      "ledger": 14
+      "ledger": 14,
+      "section": 4
     },
     {
       "n": 15,
@@ -547,7 +561,8 @@
           0.0114
         ]
       ],
-      "ledger": 15
+      "ledger": 15,
+      "section": 5
     },
     {
       "n": 16,
@@ -574,7 +589,8 @@
           0.0113
         ]
       ],
-      "ledger": 16
+      "ledger": 16,
+      "section": 6
     },
     {
       "n": 17,
@@ -613,7 +629,8 @@
           0.0112
         ]
       ],
-      "ledger": 17
+      "ledger": 17,
+      "section": 7
     },
     {
       "n": 18,
@@ -652,7 +669,8 @@
           0.0114
         ]
       ],
-      "ledger": 18
+      "ledger": 18,
+      "section": 8
     },
     {
       "n": 19,
@@ -691,7 +709,8 @@
           0.0114
         ]
       ],
-      "ledger": 19
+      "ledger": 19,
+      "section": 8
     },
     {
       "n": 20,
@@ -712,7 +731,8 @@
           0.0113
         ]
       ],
-      "ledger": 22
+      "ledger": 22,
+      "section": 9
     },
     {
       "n": 21,
@@ -745,7 +765,8 @@
           0.0114
         ]
       ],
-      "ledger": 20
+      "ledger": 20,
+      "section": 9
     },
     {
       "n": 22,
@@ -784,7 +805,8 @@
           0.0113
         ]
       ],
-      "ledger": 21
+      "ledger": 21,
+      "section": 9
     },
     {
       "n": 23,
@@ -817,7 +839,8 @@
           0.0118
         ]
       ],
-      "ledger": 23
+      "ledger": 23,
+      "section": 9
     },
     {
       "n": 24,
@@ -856,7 +879,8 @@
           0.0114
         ]
       ],
-      "ledger": 28
+      "ledger": 28,
+      "section": 9
     },
     {
       "n": 25,
@@ -883,7 +907,8 @@
           0.0113
         ]
       ],
-      "ledger": 27
+      "ledger": 27,
+      "section": 9
     },
     {
       "n": 26,
@@ -904,7 +929,8 @@
           0.0113
         ]
       ],
-      "ledger": 24
+      "ledger": 24,
+      "section": 10
     },
     {
       "n": 27,
@@ -931,7 +957,8 @@
           0.0114
         ]
       ],
-      "ledger": 25
+      "ledger": 25,
+      "section": 10
     },
     {
       "n": 28,
@@ -958,7 +985,8 @@
           0.0114
         ]
       ],
-      "ledger": 26
+      "ledger": 26,
+      "section": 10
     },
     {
       "n": 29,
@@ -991,7 +1019,8 @@
           0.0115
         ]
       ],
-      "ledger": 29
+      "ledger": 29,
+      "section": 13
     },
     {
       "n": 30,
@@ -1018,7 +1047,8 @@
           0.0113
         ]
       ],
-      "ledger": 32
+      "ledger": 32,
+      "section": 13
     },
     {
       "n": 31,
@@ -1057,7 +1087,8 @@
           0.0113
         ]
       ],
-      "ledger": 30
+      "ledger": 30,
+      "section": 14
     },
     {
       "n": 32,
@@ -1096,7 +1127,8 @@
           0.0113
         ]
       ],
-      "ledger": 33
+      "ledger": 33,
+      "section": 15
     },
     {
       "n": 33,
@@ -1141,7 +1173,8 @@
           0.0113
         ]
       ],
-      "ledger": 31
+      "ledger": 31,
+      "section": 15
     },
     {
       "n": 34,
@@ -1162,7 +1195,8 @@
           0.0138
         ]
       ],
-      "ledger": 34
+      "ledger": 34,
+      "section": 15
     },
     {
       "n": 35,
@@ -1195,7 +1229,8 @@
           0.0139
         ]
       ],
-      "ledger": 35
+      "ledger": 35,
+      "section": 17
     },
     {
       "n": 36,
@@ -1228,7 +1263,8 @@
           0.0113
         ]
       ],
-      "ledger": 37
+      "ledger": 37,
+      "section": 17
     },
     {
       "n": 37,
@@ -1273,7 +1309,8 @@
           0.0112
         ]
       ],
-      "ledger": 36
+      "ledger": 36,
+      "section": 17
     },
     {
       "n": 38,
@@ -1300,7 +1337,8 @@
           0.0113
         ]
       ],
-      "ledger": 38
+      "ledger": 38,
+      "section": 19
     },
     {
       "n": 39,
@@ -1321,7 +1359,8 @@
           0.0113
         ]
       ],
-      "ledger": 40
+      "ledger": 40,
+      "section": 19
     },
     {
       "n": 40,
@@ -1354,7 +1393,8 @@
           0.0113
         ]
       ],
-      "ledger": 39
+      "ledger": 39,
+      "section": 21
     },
     {
       "n": 41,
@@ -1375,7 +1415,8 @@
           0.0114
         ]
       ],
-      "ledger": 41
+      "ledger": 41,
+      "section": 21
     },
     {
       "n": 42,
@@ -1402,7 +1443,8 @@
           0.0114
         ]
       ],
-      "ledger": 42
+      "ledger": 42,
+      "section": 22
     },
     {
       "n": 43,
@@ -1417,7 +1459,8 @@
           0.01
         ]
       ],
-      "ledger": 43
+      "ledger": 43,
+      "section": 22
     },
     {
       "n": 44,
@@ -1444,7 +1487,8 @@
           0.0113
         ]
       ],
-      "ledger": 44
+      "ledger": 44,
+      "section": 22
     },
     {
       "n": 45,
@@ -1483,7 +1527,8 @@
           0.0113
         ]
       ],
-      "ledger": 45
+      "ledger": 45,
+      "section": 24
     },
     {
       "n": 46,
@@ -1510,7 +1555,8 @@
           0.0114
         ]
       ],
-      "ledger": 47
+      "ledger": 47,
+      "section": 24
     },
     {
       "n": 47,
@@ -1549,7 +1595,8 @@
           0.0113
         ]
       ],
-      "ledger": 46
+      "ledger": 46,
+      "section": 24
     },
     {
       "n": 48,
@@ -1576,7 +1623,8 @@
           0.0113
         ]
       ],
-      "ledger": 48
+      "ledger": 48,
+      "section": 25
     },
     {
       "n": 49,
@@ -1609,7 +1657,8 @@
           0.0113
         ]
       ],
-      "ledger": 49
+      "ledger": 49,
+      "section": 25
     },
     {
       "n": 50,
@@ -1642,7 +1691,8 @@
           0.0113
         ]
       ],
-      "ledger": 50
+      "ledger": 50,
+      "section": 25
     },
     {
       "n": 51,
@@ -1669,154 +1719,213 @@
           0.0113
         ]
       ],
-      "ledger": 51
+      "ledger": 51,
+      "section": 26
     }
   ],
   "toc": [
     {
       "level": 1,
       "title": "Abstract",
-      "page": 1
+      "page": 1,
+      "x": 0.0879,
+      "y": 0.3962
     },
     {
       "level": 1,
       "title": "1 Introduction",
-      "page": 1
+      "page": 1,
+      "x": 0.5195,
+      "y": 0.5574
     },
     {
       "level": 1,
       "title": "2 Background and Related Work",
-      "page": 2
+      "page": 2,
+      "x": 0.5195,
+      "y": 0.7593
     },
     {
       "level": 2,
       "title": "2.1 Digital Wellbeing: Concept and Importance",
-      "page": 2
+      "page": 2,
+      "x": 0.5195,
+      "y": 0.7797
     },
     {
       "level": 2,
       "title": "2.2 Self-Awareness and Self-Reflective Tools",
-      "page": 3
+      "page": 3,
+      "x": 0.5195,
+      "y": 0.2671
     },
     {
       "level": 2,
       "title": "2.3 Human-Centered Design of Wellbeing Tools",
-      "page": 4
+      "page": 4,
+      "x": 0.0879,
+      "y": 0.3778
     },
     {
       "level": 1,
       "title": "3 Study Design and Methods",
-      "page": 4
+      "page": 4,
+      "x": 0.5195,
+      "y": 0.1057
     },
     {
       "level": 2,
       "title": "3.1 Developing a technology probe: WellScreen",
-      "page": 4
+      "page": 4,
+      "x": 0.5195,
+      "y": 0.2343
     },
     {
       "level": 2,
       "title": "3.2 Participants and Recruitment",
-      "page": 4
+      "page": 4,
+      "x": 0.5195,
+      "y": 0.5716
     },
     {
       "level": 2,
       "title": "3.3 Deployment of WellScreen",
-      "page": 5
+      "page": 5,
+      "x": 0.0879,
+      "y": 0.8319
     },
     {
       "level": 2,
       "title": "3.4 Data Analysis",
-      "page": 7
+      "page": 7,
+      "x": 0.0879,
+      "y": 0.8206
     },
     {
       "level": 2,
       "title": "3.5 Privacy, Ethics, and Positionality",
-      "page": 7
+      "page": 7,
+      "x": 0.5195,
+      "y": 0.7099
     },
     {
       "level": 1,
       "title": "4 RQ1: Estimated–Actual Gap in Digital Use",
-      "page": 8
+      "page": 8,
+      "x": 0.0879,
+      "y": 0.221
     },
     {
       "level": 2,
       "title": "4.1 Quantifying the Estimated–Actual Gap",
-      "page": 8
+      "page": 8,
+      "x": 0.0879,
+      "y": 0.3271
     },
     {
       "level": 2,
       "title": "4.2 Factors Explaining Estimated–Actual Gap",
-      "page": 8
+      "page": 8,
+      "x": 0.0879,
+      "y": 0.6264
     },
     {
       "level": 2,
       "title": "4.3 Linking Estimated–Actual Gaps with Daily Wellbeing",
-      "page": 8
+      "page": 8,
+      "x": 0.5195,
+      "y": 0.569
     },
     {
       "level": 1,
       "title": "5 RQ2: WellScreen for Digital and Holistic Wellbeing",
-      "page": 9
+      "page": 9,
+      "x": 0.5195,
+      "y": 0.7489
     },
     {
       "level": 2,
       "title": "5.1 Psychological Effects of Using WellScreen",
-      "page": 10
+      "page": 10,
+      "x": 0.0879,
+      "y": 0.4633
     },
     {
       "level": 2,
       "title": "5.2 Evolving Definitions of Digital Wellbeing",
-      "page": 10
+      "page": 10,
+      "x": 0.5195,
+      "y": 0.6961
     },
     {
       "level": 2,
       "title": "5.3 Intersections of Digital and Mental Wellbeing",
-      "page": 12
+      "page": 12,
+      "x": 0.0879,
+      "y": 0.6489
     },
     {
       "level": 1,
       "title": "6 RQ3: WellScreen for Digital Self-Awareness",
-      "page": 12
+      "page": 12,
+      "x": 0.5195,
+      "y": 0.3386
     },
     {
       "level": 2,
       "title": "6.1 Perceived Usefulness of WellScreen",
-      "page": 12
+      "page": 12,
+      "x": 0.5195,
+      "y": 0.4379
     },
     {
       "level": 2,
       "title": "6.2 Unpacking Self-Awareness through Self-Reporting and Reflection",
-      "page": 13
+      "page": 13,
+      "x": 0.0879,
+      "y": 0.6382
     },
     {
       "level": 1,
       "title": "7 Discussion",
-      "page": 14
+      "page": 14,
+      "x": 0.5195,
+      "y": 0.7514
     },
     {
       "level": 2,
       "title": "7.1 Self-Reflection for Self-Awareness: Beyond Screen Time",
-      "page": 15
+      "page": 15,
+      "x": 0.0879,
+      "y": 0.1461
     },
     {
       "level": 2,
       "title": "7.2 Design Implications",
-      "page": 15
+      "page": 15,
+      "x": 0.5195,
+      "y": 0.6546
     },
     {
       "level": 2,
       "title": "7.3 Limitations and Future Directions",
-      "page": 17
+      "page": 17,
+      "x": 0.0879,
+      "y": 0.198
     },
     {
       "level": 1,
       "title": "8 Conclusion",
-      "page": 17
+      "page": 17,
+      "x": 0.5195,
+      "y": 0.1961
     },
     {
       "level": 1,
       "title": "References",
-      "page": 17
+      "page": 17,
+      "x": 0.5195,
+      "y": 0.682
     }
   ],
   "strips": [

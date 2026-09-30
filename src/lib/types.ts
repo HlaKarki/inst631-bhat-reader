@@ -7,12 +7,15 @@ export type Note = {
   cat: string
   text: string
   rects: Rect[]
+  section: number
 }
 
 export type TocEntry = {
   level: number
   title: string
   page: number
+  x: number
+  y: number
 }
 
 export type Strip = {

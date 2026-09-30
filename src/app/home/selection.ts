@@ -15,6 +15,8 @@ export const stops = [...groups.values()].sort((a, b) => a.notes[0] - b.notes[0]
 
 export const stopOf = (n: number) => stops.find((s) => s.notes[0] === n)
 
+export const stopWith = (n: number) => stops.find((s) => s.notes.includes(n))
+
 export const stopIndex = (notes: number[]) => {
   const first = Math.min(...notes)
   return stops.findIndex((s) => s.notes.includes(first))

@@ -6,13 +6,14 @@ type NoteCardProps = {
   id: string
   label: string
   onClose: () => void
+  onMenu: () => void
   notes: Note[]
   cats: Record<string, string>
   open: boolean
   nav: { at: number; total: number; onStep: (dir: 1 | -1) => void }
 }
 
-export function NoteCard({ id, label, onClose, notes, cats, open, nav }: NoteCardProps) {
+export function NoteCard({ id, label, onClose, onMenu, notes, cats, open, nav }: NoteCardProps) {
   const rects = notes.flatMap((n) => n.rects)
   const left = Math.min(...rects.map(([x]) => x))
   const right = Math.max(...rects.map(([x, , w]) => x + w))
@@ -87,37 +88,43 @@ export function NoteCard({ id, label, onClose, notes, cats, open, nav }: NoteCar
           'max-sm:sticky max-sm:top-0 max-sm:order-first max-sm:border-b max-sm:border-ink/10 max-sm:py-2',
         )}
       >
-        <StepButton
-          data-step="prev"
-          aria-label="Previous note"
-          aria-keyshortcuts="ArrowLeft"
-          disabled={nav.at === 1}
-          onClick={() => nav.onStep(-1)}
-        >
-          Prev
+        <StepButton aria-keyshortcuts="Escape" onClick={onClose}>
+          Close
         </StepButton>
-        <span className="text-ink/60 tabular-nums">
-          {nav.at} of {nav.total}
-        </span>
-        <StepButton
-          data-step="next"
-          aria-label="Next note"
-          aria-keyshortcuts="ArrowRight"
-          disabled={nav.at === nav.total}
-          onClick={() => nav.onStep(1)}
-        >
-          Next
-        </StepButton>
+        <div className="flex items-center gap-1">
+          <StepButton
+            data-step="prev"
+            aria-label="Previous note"
+            aria-keyshortcuts="ArrowLeft"
+            disabled={nav.at === 1}
+            onClick={() => nav.onStep(-1)}
+          >
+            Prev
+          </StepButton>
+          <StepButton
+            aria-haspopup="dialog"
+            aria-label={`Note ${nav.at} of ${nav.total}, open contents`}
+            className="font-normal text-ink/60 tabular-nums"
+            onClick={onMenu}
+          >
+            {nav.at} of {nav.total}
+          </StepButton>
+          <StepButton
+            data-step="next"
+            aria-label="Next note"
+            aria-keyshortcuts="ArrowRight"
+            disabled={nav.at === nav.total}
+            onClick={() => nav.onStep(1)}
+          >
+            Next
+          </StepButton>
+        </div>
       </nav>
-      {/* Touch screen readers have no Escape key, so they get a close button that sighted users never see. */}
-      <button type="button" className="sr-only" aria-keyshortcuts="Escape" onClick={onClose}>
-        Close note
-      </button>
     </aside>
   )
 }
 
-function StepButton(props: ComponentProps<'button'>) {
+function StepButton({ className, ...props }: ComponentProps<'button'>) {
   return (
     <button
       type="button"
@@ -126,6 +133,7 @@ function StepButton(props: ComponentProps<'button'>) {
         'transition-colors duration-150 ease-out',
         'enabled:hover:bg-ink/5 disabled:opacity-40',
         'outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink',
+        className,
       )}
       {...props}
     />
