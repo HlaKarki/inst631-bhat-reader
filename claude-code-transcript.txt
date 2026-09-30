@@ -1,0 +1,4176 @@
+Lightly edited before publishing: personal chat, deadline reminders and notes about my own
+course wiki were removed. Everything about building the app is unchanged.
+
+ ▐▛███▛█   Claude Code v2.1.285
+▝▜██████▀  Fable 5.1 · Claude Max
+ ▝▝   ▝▝   ~/Documents/UMD/courses/chi
+
+
+❯ get me that json and setup a lightweight vite app somewhere
+  under UMD
+
+  Ran 5 shell commands (ctrl+o to expand)
+
+⏺ Vite scaffolded, and data.json is written. Next I'll strip the demo code and
+  hook up the data.
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+⏺ Build passes. Next I'll take a quick headless screenshot to confirm the
+  highlights line up with the page text.
+
+  Read 1 file, ran 2 shell commands (ctrl+o to expand)
+
+⏺ The JSON
+
+  The JSON is at courses/chi/part3-reader/data.json. tools/build_part3.py now
+  writes it every time it runs, so it stays in sync with the ledger. The file
+  has these fields:
+  - pages (20) and aspect (page height ÷ width)
+  - cats: the 8 category keys and their labels
+  - notes: 51 notes, each with n, page, cat, text and rects. Each rect is [x, y,
+    w, h] as a fraction of the page, so it scales to any render size.
+  - toc: the paper's section headings, with their page numbers
+
+  The app
+
+  The app is at courses/chi/reader-app/. It's Vite with vanilla TypeScript,
+  installed with bun. I removed the demo code. src/types.ts types the data.
+  src/main.ts is a short starter that renders all 20 pages with yellow highlight
+  overlays.
+
+  The build passes. A headless screenshot confirmed that the highlights sit on
+  the right text.
+
+  To run it:
+  cd courses/chi/reader-app
+  bun dev
+
+  bun run sync recopies data.json and the page images from part3-reader/. Run it
+  after any ledger rebuild.
+
+  Not built yet: note cards, category filters and page navigation. That's the
+  part you said you'd start on. The old template (tools/part3_template.html,
+  lines 316 to 430) has a working version of each piece you can borrow from.
+
+✻ Brewed for 1m 45s · done 6:42 PM
+
+❯ alright first of all, i need to be able to get the bounding boxes of the
+  highlighted areas. did we already have those in the data.json?
+⏺ Yes. Every note in data.json has a rects array, and those rects are the
+  highlight boxes.
+
+  What the rects are
+
+  Each rect is one highlighted line, not the whole passage. A note that spans 5
+  lines has 5 rects. Note 1, for example, is the abstract highlight on page 1:
+
+  "rects": [[0.428, 0.4591, 0.0524, 0.0113],
+            [0.0879, 0.4728, 0.3925, 0.0114], ...]
+
+  Each rect is [x, y, w, h] as a fraction of the page. x and y are the top-left
+  corner, measured from the page's top-left, and w and h are the width and
+  height. So 0.428 means 42.8% of the way across the page. To get pixels,
+  multiply by the rendered page size: x * imgWidth, y * imgHeight. That's why
+  the starter sets left: x * 100% and the like. The numbers stay correct at any
+  zoom.
+
+  If you need one box per note
+
+  The data has no single box per note. You get it from the union of the line
+  rects: the smallest x and y, and the largest x + w and y + h. One catch: a
+  highlight that runs from the bottom of one column to the top of the next gives
+  a union box covering both columns. The box then includes unhighlighted text
+  in between. For hover targets and scroll-to, the per-line rects are more
+  accurate. The union box is good for a card's anchor point or its vertical
+  position.
+
+  I can also add a precomputed bbox field per note in build_part3.py if you'd
+  rather not compute it in the app.
+
+✻ Sautéed for 9s · done 6:51 PM
+
+❯ okay. one thing I noticed in the highlights that i see on 5174 right now is
+  that all highlights are in teh same color? waht's up?
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ The starter paints every highlight the same yellow. .hl in src/style.css has
+  one hard-coded background: rgb(255 214 0 / 0.35), and main.ts never looks at
+  the note's category when it styles a highlight. The data is fine: every note
+  in data.json has its cat. The starter just doesn't use it yet.
+
+  How the old reader did it
+
+  The old reader colored each highlight by category in three steps.
+
+  First, it defined one CSS variable per category on :root
+  (tools/part3_template.html lines 15 to 22):
+
+  --c-central: #f26d6d;   --c-rq: #ffab3d;
+  --c-def: #f5dc3a;       --c-prior: #f585c6;
+  --c-method: #6fd26f;    --c-results: #9a87f5;
+  --c-policy: #4fd3d3;    --c-mine: #6fb0ff;
+
+  Second, the .hl rule took its color from a per-element variable, and opacity
+  did the transparency (lines 172 to 181):
+
+  .hl { background: var(--c); opacity: .34; mix-blend-mode: multiply; }
+
+  Third, the loop set that variable on each highlight from the note's category
+  (line 392):
+
+  hl.style.setProperty('--c', `var(--c-${note.cat})`)
+
+  In your app, that means adding the 8 variables to style.css, changing the .hl
+  background to var(--c) with an opacity, and adding one line in the rect loop
+  in main.ts. The category keys in data.cats match the variable names exactly,
+  so no mapping step is needed.
+
+✻ Worked for 15s · done 6:52 PM
+
+❯ alright first, let's add those variables. also, start the git init btw, local
+  for now is fine
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ I added the 8 category color variables to :root in src/style.css. They sit
+  under the existing color line and use the same keys as data.cats: --c-central,
+  --c-rq, --c-def, --c-prior, --c-method, --c-results, --c-policy and --c-mine.
+  Highlights are still yellow, because .hl and main.ts don't use the variables
+  yet. Those are the next two changes.
+
+  Git is set up locally in courses/chi/reader-app/ on main, with no remote. The
+  first commit is 582b124 feat: reader-app; scaffolded vite reader with part3
+  note data, page images and category color variables. Vite's default .gitignore
+  excludes node_modules and dist.
+
+  The commit also includes the 20 page images (about 7 MB) and src/data.json.
+  Both are needed for a deploy, so I included them. If you rebuild the ledger
+  and run bun run sync, they'll show up as changes to commit.
+
+✻ Worked for 20s · done 6:54 PM
+
+❯ alright neat. lets use those variables now
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      p='src/style.css';s=open(p).read()…)
+  ⎿  ✓ built in 180ms
+     }
+     … +6 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/main.ts (+1 -0)
+      22        hl.className = 'hl'
+      23        hl.title = `${note.n}. ${data.cats[note.cat]}`
+      24        Object.assign(hl.style, { left: `${x * 100}%`, top: `${y
+          * 100}%`, width: `${w * 100}%`, height: `${h * 100}%` })
+      25 +      hl.style.setProperty('--c', `var(--c-${note.cat})`)
+      26        sheet.append(hl)
+      27      }
+      28    }
+  ⎿  Updated reader-app/src/style.css (+2 -1)
+      39
+      40  .hl {
+      41    position: absolute;
+      42 -  background: rgb(255 214 0 / 0.35);
+      42 +  background: var(--c);
+      43 +  opacity: 0.34;
+      44    mix-blend-mode: multiply;
+      45  }
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+⏺ The highlights now use your category colors. Your dev server on 5174 already
+  shows them, since Vite hot-reloads. I checked it with a headless screenshot.
+  On page 1, the abstract's central idea is salmon, the results line is purple,
+  prior work is pink and the definition is yellow.
+
+  What changed
+
+  In src/style.css, .hl now takes background: var(--c) with opacity: 0.34,
+  instead of the hard-coded yellow. The opacity sits on the element, so the same
+  hex values also work at full strength for markers or card borders later.
+
+  In src/main.ts, one line was added to the rect loop:
+
+  hl.style.setProperty('--c', `var(--c-${note.cat})`)
+
+  Each highlight points --c at its category's variable.
+
+  The build passes. I haven't committed this change. Say the word and I'll
+  commit it, or keep going and commit together with the next piece.
+
+✻ Worked for 27s · done 6:55 PM
+
+❯ neat. we can commit this.
+
+  and now i wnat to add hover event/state on the highlighted areas.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      p='src/main.ts';s=open(p).read()…)
+  ⎿    for (const note of data.notes.filter((n) => n.page === p)) {
+         const hls = note.rects.map(([x, y, w, h]) => {
+           const hl = document.createElement('div')
+     … +20 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/main.ts (+8 -1)
+      17    sheet.append(img)
+      18
+      19    for (const note of data.notes.filter((n) => n.page === p)) {
+      20 -    for (const [x, y, w, h] of note.rects) {
+      20 +    const hls = note.rects.map(([x, y, w, h]) => {
+      21        const hl = document.createElement('div')
+      22        hl.className = 'hl'
+      23        hl.title = `${note.n}. ${data.cats[note.cat]}`
+      24        Object.assign(hl.style, { left: `${x * 100}%`, top: `${y
+          * 100}%`, width: `${w * 100}%`, height: `${h * 100}%` })
+      25        hl.style.setProperty('--c', `var(--c-${note.cat})`)
+      26        sheet.append(hl)
+      27 +      return hl
+      28 +    })
+      29 +
+      30 +    const lit = (on: boolean) => hls.forEach((hl) => hl.classLi
+         +st.toggle('lit', on))
+      31 +    for (const hl of hls) {
+      32 +      hl.addEventListener('pointerenter', () => lit(true))
+      33 +      hl.addEventListener('pointerleave', () => lit(false))
+      34      }
+      35    }
+      36
+  ⎿  Updated reader-app/src/style.css (+5 -0)
+      42    background: var(--c);
+      43    opacity: 0.34;
+      44    mix-blend-mode: multiply;
+      45 +  transition: opacity 0.15s;
+      46 +}
+      47 +
+      48 +.hl.lit {
+      49 +  opacity: 0.62;
+      50  }
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ The hover test surfaced a real overlap: note 3's highlight sits on top of note
+  1's line. I'll check how common that is.
+
+  Read 1 file, ran 4 shell commands (ctrl+o to expand)
+
+⏺ Needs you
+
+  - Decide how shared highlights should behave. Two pairs of notes cover exactly
+    the same lines, so one note in each pair can't be hovered. Options are
+    below.
+
+  Hover works
+
+  Hovering any line of a note now lights every line of that note: opacity goes
+  from 0.34 to 0.62, with a 0.15s fade. Moving the pointer off returns it to
+  normal.
+
+  A headless check hovered note 2 and got 4 lit rects. After the pointer left,
+  it got 0. Vite already hot-reloaded your dev server on 5174. The build passes.
+  I haven't committed this yet, because your answer below might change the
+  code.
+
+  The change in src/main.ts: the rect loop now collects a note's highlight
+  elements into hls. Each one gets pointerenter and pointerleave listeners that
+  toggle a lit class on the whole group. src/style.css adds the transition and
+  the .hl.lit rule.
+
+  The overlap
+
+  Notes 1 and 3 on page 1 have identical rects: note 1 is the central idea and
+  note 3 a definition, both on the abstract's "We posit self-awareness..."
+  sentences. Notes 18 and 19 on page 4 also match exactly: method and your own
+  question, both on the recruitment sentence.
+
+  build_part3.py stretches each highlight to full sentences, so two notes
+  anchored in the same sentence end up with the same boxes. The later note's
+  divs sit on top, so notes 3 and 19 catch every hover, and notes 1 and 18 are
+  unreachable. The two colors also stack, which is why note 1 looked orange
+  instead of red.
+
+  There are two ways to handle it:
+  - Light the passage, not the note. Hovering a shared passage lights every note
+    anchored there. This fits once note cards exist, where hovering could
+    highlight both cards.
+  - Give each note its own handle. Leave hover as it is and add the numbered
+    margin markers from the old reader. Each note gets a marker you can always
+    hover, even when its highlight is covered. Hovering the marker lights the
+    note.
+
+  I'd do the second one. It's what the old reader did, and markers are probably
+  the next thing you'd build anyway.
+
+✻ Baked for 2m 18s · done 6:58 PM
+
+❯ pause. change to vite react with ts go
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; git rm -qf
+      src/main.ts && bun run build 2>&1 | tail -1 && bun run lint 2>&1 | tail
+      -2; ls src)
+  ⎿  ✓ built in 85ms
+     $ oxlint
+     App.tsx
+     … +5 lines (ctrl+o to expand)
+  ⎿  Deleted reader-app/src/main.ts (+0 -38)
+       1 -import './style.css'
+       2 -import raw from './data.json'
+       3 -import type { ReaderData } from './types'
+       4 -
+       5 -const data = raw as unknown as ReaderData
+       6 -const app = document.querySelector<HTMLDivElement>('#app')!
+       7 -
+       8 -for (let p = 1; p <= data.pages; p++) {
+       9 -  const sheet = document.createElement('section')
+      10 -  sheet.className = 'sheet'
+      11 -  sheet.id = `p${p}`
+      12 -
+      13 -  const img = document.createElement('img')
+      14 -  img.src = `pages/p${String(p).padStart(2, '0')}.jpg`
+      15 -  img.alt = `Page ${p} of the paper`
+      16 -  img.loading = p <= 2 ? 'eager' : 'lazy'
+      17 -  sheet.append(img)
+      18 -
+      19 -  for (const note of data.notes.filter((n) => n.page === p)) {
+      20 -    const hls = note.rects.map(([x, y, w, h]) => {
+      21 -      const hl = document.createElement('div')
+      22 -      hl.className = 'hl'
+      23 -      hl.title = `${note.n}. ${data.cats[note.cat]}`
+      24 -      Object.assign(hl.style, { left: `${x * 100}%`, top: `${y
+         -* 100}%`, width: `${w * 100}%`, height: `${h * 100}%` })
+      25 -      hl.style.setProperty('--c', `var(--c-${note.cat})`)
+      26 -      sheet.append(hl)
+      27 -      return hl
+      28 -    })
+      29 -
+      30 -    const lit = (on: boolean) => hls.forEach((hl) => hl.classLi
+         -st.toggle('lit', on))
+      31 -    for (const hl of hls) {
+      32 -      hl.addEventListener('pointerenter', () => lit(true))
+      33 -      hl.addEventListener('pointerleave', () => lit(false))
+      34 -    }
+      35 -  }
+      36 -
+      37 -  app.append(sheet)
+      38 -}
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Needs you
+
+  - Restart your dev server. The bun dev on 5174 started before the switch, and
+    it now returns a 500 with an empty page. Stop it and run bun dev again in
+    courses/chi/reader-app.
+
+  Done
+
+  The reader is now Vite + React 19 + TypeScript, set up from Vite's own
+  react-ts template with bun. Everything built so far carries over: colored
+  highlights, and hovering any line of a note lights all of that note's lines.
+
+  A headless check against the production build hovered note 2 and got 4 lit
+  rects, then 0 after the pointer left. The build passes, and bun run lint
+  (oxlint, from the template) reports nothing.
+
+  Files now in src/:
+  - main.tsx mounts <App /> in StrictMode.
+  - App.tsx loads data.json and renders one <Page> per paper page.
+  - Page.tsx holds Page, which draws the image and its notes, and NoteHighlight,
+    which renders one note's rects. Hover is a useState in NoteHighlight, so
+    each note tracks its own lit state.
+  - types.ts, data.json and style.css are unchanged, apart from #app becoming
+    .pages.
+
+  bun run sync still works the same. The new config files come from the
+  template: vite.config.ts, the three tsconfig files with resolveJsonModule
+  added, and .oxlintrc.json.
+
+  I haven't committed yet. The working tree holds the React switch plus the
+  hover change from before. Say the word and I'll commit both together.
+
+  The overlap decision from before still stands. Notes 1/3 and 18/19 share
+  identical rects, and margin markers would give each note its own handle.
+
+✻ Cooked for 1m 7s · done 7:01 PM
+❯ prettier or oxlint or whatever, are those in too?
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ Oxlint is in, but there's no formatter. Vite's React template ships oxlint
+  only, with no Prettier, no oxfmt and no editorconfig.
+
+  What's there
+
+  Oxlint runs with bun run lint. .oxlintrc.json turns on the react, typescript
+  and oxc plugins, plus two React rules: rules-of-hooks as an error, and
+  only-export-components as a warning, so fast refresh keeps working. It
+  currently reports nothing.
+
+  Formatter options
+
+  - Prettier (3.9.9). Stable and the default in most editors, so format-on-save
+    just works. It's the safe pick.
+  - oxfmt (0.71.0). From the same team as oxlint and much faster, but still
+    pre-1.0, so expect occasional changes in output. For a repo this small, the
+    speed doesn't matter.
+
+  I'd go with Prettier. Whichever you pick, it needs a small config to match the
+  current code, which has no semicolons, uses single quotes, and runs lines to
+  about 120 characters. Without that config, the first format run rewrites every
+  file. I'd add a format script next to lint too.
+
+  Want me to add Prettier?
+
+✻ Baked for 16s · done 7:01 PM
+
+❯ oxfmt please
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; bun add -d oxfmt
+      2>&1 | tail -2; ls node_modules/oxfmt; bunx oxfmt --help 2>&1 | head -40)
+  ⎿  3 packages installed [682.00ms]
+     bin
+     dist
+     … +42 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/bun.lock (+43 -0)
+      13          "@types/react": "^19.2.18",
+      14          "@types/react-dom": "^19.2.7",
+      15          "@vitejs/plugin-react": "^6.1.1",
+      16 +        "oxfmt": "^0.71.0",
+      17          "oxlint": "^1.81.0",
+      18          "typescript": "~6.0.2",
+      19          "vite": "^8.3.0",
+     ...
+      23    "packages": {
+      24      "@oxc-project/types": ["@oxc-project/types@0.151.0", "", {}
+          , "sha512-J1yXrIlNDZVzE3ada310xeAw7nH8yCAyLPuUIsjKatFPmfn5bS1oW
+          +cM+QsGOtVWd5nhSpbwZWx/rue+r5Z+PA=="],
+      25
+      26 +    "@oxfmt/binding-android-arm-eabi": ["@oxfmt/binding-android
+         +-arm-eabi@0.71.0", "", { "os": "android", "cpu": "arm" }, "sha5
+         +12-l31EyBfB4egJeFua11aQFEUE9nnDtfpWCadqQovm0WL30t/yUHtdFl/5HyFX
+         +vd5xT8Ewh3U4TI9f30GowrQ1fw=="],
+      27 +
+      28 +    "@oxfmt/binding-android-arm64": ["@oxfmt/binding-android-ar
+         +m64@0.71.0", "", { "os": "android", "cpu": "arm64" }, "sha512-E
+         +8q39SUZzSXQ08oZoFoTkxRADkdBNgL6De4qgZYr2O4JCunwqrZwAyCebxIF3yVH
+         +BafHM30WUkhTkDi+jNYZOw=="],
+      29 +
+      30 +    "@oxfmt/binding-darwin-arm64": ["@oxfmt/binding-darwin-arm6
+         +4@0.71.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-pTte
+         +TrN88DicrmJ3DocBmpNDa6Umfh0iveEG8rnAlDFQpclmtDS7hnIvZbIEV9mDO0O
+         +t1U0sjtoJQ1itd/ZMhQ=="],
+      31 +
+      32 +    "@oxfmt/binding-darwin-x64": ["@oxfmt/binding-darwin-x64@0.
+         +71.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-G5melRC3Ii
+         +NEgXlNKJhSExJYQGAQIppHFp2cl/wFrqQcEwmc4k4TkrHaFTR29SDudjoW5AZq5
+         +cXPGJDqtlH/Yg=="],
+      33 +
+      34 +    "@oxfmt/binding-freebsd-x64": ["@oxfmt/binding-freebsd-x64@
+         +0.71.0", "", { "os": "freebsd", "cpu": "x64" }, "sha512-Hb1P5yK
+         +b9aiH2VSbm3Ml37mKjzqpunYet9krw/YK7V5JsAUJDQlju3Yk/dEqQvJD/usBvp
+         +i01Vbk9ZDNo0a8Cw=="],
+      35 +
+      36 +    "@oxfmt/binding-linux-arm-gnueabihf": ["@oxfmt/binding-linu
+         +x-arm-gnueabihf@0.71.0", "", { "os": "linux", "cpu": "arm" }, "
+         +sha512-r7n4JEO+rkp0kaP3ia+0hv6FzK3PQIHqaF0jxGuhjJ4JHVX9ZVRbgpDV
+         +DW+OloyuJsRWpWFDKIHe8gfl1p/4mQ=="],
+      37 +
+      38 +    "@oxfmt/binding-linux-arm-musleabihf": ["@oxfmt/binding-lin
+         +ux-arm-musleabihf@0.71.0", "", { "os": "linux", "cpu": "arm" },
+         + "sha512-EEynTF4nakgqDhVCmd3cHQCmTcw0BM8ea6eHigTdtZ3yxdsBNv+dYk
+         +t+OpDDZx1n/jzjI7J+Ht7IgkqFWuJUxQ=="],
+      39 +
+      40 +    "@oxfmt/binding-linux-arm64-gnu": ["@oxfmt/binding-linux-ar
+         +m64-gnu@0.71.0", "", { "os": "linux", "cpu": "arm64" }, "sha512
+         +-7VgJIrywCwR/G6YMv+HqsccUt8Z4q4mbM2xR+Ry/6AeMk4pCmZ9aO4Srd3mmrv
+         +Vu8PsCZGP7oHEHSXWTmyloaQ=="],
+      41 +
+      42 +    "@oxfmt/binding-linux-arm64-musl": ["@oxfmt/binding-linux-a
+         +rm64-musl@0.71.0", "", { "os": "linux", "cpu": "arm64" }, "sha5
+         +12-AOCaminv/+fhinUXKvtPZT4POhNYmN9GfvaJdgJa1AbvuzClWGwDIXfJg8eu
+         +3sYaVL2B68jNvmS7LZGAYa0z3A=="],
+      43 +
+      44 +    "@oxfmt/binding-linux-ppc64-gnu": ["@oxfmt/binding-linux-pp
+         +c64-gnu@0.71.0", "", { "os": "linux", "cpu": "ppc64" }, "sha512
+         +-0SHxuaa4QRLM7jfsd8wc6L7KdLg+FR6/ah9k1eAvcrK/Sni7oxchMvsjwUsyak
+         +VAta+wBVDkjJTr7/RFU0uUGA=="],
+      45 +
+      46 +    "@oxfmt/binding-linux-riscv64-gnu": ["@oxfmt/binding-linux-
+         +riscv64-gnu@0.71.0", "", { "os": "linux", "cpu": "none" }, "sha
+         +512-UNKj1+rPorTK6uSlQzpN96vDNbHbL/63zcpznweo0ImQdkDdtQCS7G3puxX
+         +++2cESPKT2B56Y6DICUmFTJde5A=="],
+      47 +
+      48 +    "@oxfmt/binding-linux-riscv64-musl": ["@oxfmt/binding-linux
+         +-riscv64-musl@0.71.0", "", { "os": "linux", "cpu": "none" }, "s
+         +ha512-5cVXKj7a0mWu7GU6/bZgNyv+KtLgM5S9cnT26Os2/abj8pK/bklHsbdYE
+         +HGLLniGjNYkyzwem8mZciPCaDtilw=="],
+      49 +
+      50 +    "@oxfmt/binding-linux-s390x-gnu": ["@oxfmt/binding-linux-s3
+         +90x-gnu@0.71.0", "", { "os": "linux", "cpu": "s390x" }, "sha512
+         +-lNpcMuZvyU1V/CY5h19hac03m4E4PLSYRckcxZOynSPojI4Mwt6nEu9wT/gVf0
+         +bclH3xGEWjwqApnSTgjkd2oA=="],
+      51 +
+      52 +    "@oxfmt/binding-linux-x64-gnu": ["@oxfmt/binding-linux-x64-
+         +gnu@0.71.0", "", { "os": "linux", "cpu": "x64" }, "sha512-5/Z6p
+         +UewQpknXqC4/ykK6Zc6RiteAnPem1Ci7K1RZLVF6w6MMjwHjR4vsjijW4Czidgv
+         +7HKeVglGjElADliT9w=="],
+      53 +
+      54 +    "@oxfmt/binding-linux-x64-musl": ["@oxfmt/binding-linux-x64
+         +-musl@0.71.0", "", { "os": "linux", "cpu": "x64" }, "sha512-uVd
+         +G2N/4GEbOeljpQ+xv+NeEwJWJGj0WaxSiSYnoiqIYy3RWrWd3rGUmxWXP1A8+fe
+         +rNvvwFoDAtvgsDUvBuSw=="],
+      55 +
+     … 27 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/package.json (+1 -0)
+      15      "@types/react": "^19.2.18",
+      16      "@types/react-dom": "^19.2.7",
+      17      "@vitejs/plugin-react": "^6.1.1",
+      18 +    "oxfmt": "^0.71.0",
+      19      "oxlint": "^1.81.0",
+      20      "typescript": "~6.0.2",
+      21      "vite": "^8.3.0"
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; bunx oxfmt --init
+      >/dev/null 2>&1; cat .oxfmtrc.json; python3 -c "
+      import json;s=json.load(open('node_mo…)
+  ⎿  {
+       "$schema": "./node_modules/oxfmt/configuration_schema.json",
+       "ignorePatterns": []
+     … +8 lines (ctrl+o to expand)
+  ⎿  Created reader-app/.oxfmtrc.json (+4 -0)
+      1 +{
+      2 +  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+      3 +  "ignorePatterns": []
+      4 +}
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; cat >
+      .oxfmtrc.json <<'EOF'
+      {…)
+  ⎿  package.json
+     src/Page.tsx
+     tsconfig.json---
+     … +9 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/.oxfmtrc.json (+4 -1)
+      1  {
+      2    "$schema": "./node_modules/oxfmt/configuration_schema.json",
+      3 -  "ignorePatterns": []
+      3 +  "semi": false,
+      4 +  "singleQuote": true,
+      5 +  "printWidth": 120,
+      6 +  "ignorePatterns": ["src/data.json", "bun.lock"]
+      7  }
+  ⎿  Updated reader-app/package.json (+7 -5)
+       1  {
+       2    "name": "reader-app",
+       3 -  "private": true,
+       3    "version": "0.0.0",
+       4 +  "private": true,
+       5    "type": "module",
+       6    "scripts": {
+       7      "sync": "cp ../part3-reader/data.json src/data.json && rm -
+          rf public/pages && cp -R ../part3-reader/pages public/pages",
+       8      "dev": "vite",
+       9      "build": "tsc -b && vite build",
+      10      "lint": "oxlint",
+      11 +    "format": "oxfmt",
+      12 +    "format:check": "oxfmt --check",
+      13      "preview": "vite preview"
+      14    },
+      15 +  "dependencies": {
+      16 +    "react": "^19.2.8",
+      17 +    "react-dom": "^19.2.8"
+      18 +  },
+      19    "devDependencies": {
+      20      "@types/node": "^24.13.3",
+      21      "@types/react": "^19.2.18",
+     ...
+      25      "oxlint": "^1.81.0",
+      26      "typescript": "~6.0.2",
+      27      "vite": "^8.3.0"
+      22 -  },
+      23 -  "dependencies": {
+      24 -    "react": "^19.2.8",
+      25 -    "react-dom": "^19.2.8"
+      28    }
+      29  }
+  ⎿  Updated reader-app/src/Page.tsx (+14 -2)
+      11  export function Page({ page, notes, cats }: PageProps) {
+      12    return (
+      13      <section className="sheet" id={`p${page}`}>
+      14 -      <img src={`pages/p${String(page).padStart(2, '0')}.jpg`}
+         -alt={`Page ${page} of the paper`} loading={page <= 2 ? 'eager'
+         -: 'lazy'} />
+      14 +      <img
+      15 +        src={`pages/p${String(page).padStart(2, '0')}.jpg`}
+      16 +        alt={`Page ${page} of the paper`}
+      17 +        loading={page <= 2 ? 'eager' : 'lazy'}
+      18 +      />
+      19        {notes.map((note) => (
+      20          <NoteHighlight key={note.n} note={note} label={`${note.
+          n}. ${cats[note.cat]}`} />
+      21        ))}
+     ...
+      31        key={i}
+      32        className={lit ? 'hl lit' : 'hl'}
+      33        title={label}
+      30 -      style={{ left: `${x * 100}%`, top: `${y * 100}%`, width:
+         -`${w * 100}%`, height: `${h * 100}%`, '--c': `var(--c-${note.ca
+         -t})` } as CSSProperties}
+      34 +      style={
+      35 +        {
+      36 +          left: `${x * 100}%`,
+      37 +          top: `${y * 100}%`,
+      38 +          width: `${w * 100}%`,
+      39 +          height: `${h * 100}%`,
+      40 +          '--c': `var(--c-${note.cat})`,
+      41 +        } as CSSProperties
+      42 +      }
+      43        onPointerEnter={() => setLit(true)}
+      44        onPointerLeave={() => setLit(false)}
+      45      />
+  ⎿  Updated reader-app/tsconfig.json (+1 -4)
+      1  {
+      2    "files": [],
+      3 -  "references": [
+      4 -    { "path": "./tsconfig.app.json" },
+      5 -    { "path": "./tsconfig.node.json" }
+      6 -  ]
+      3 +  "references": [{ "path": "./tsconfig.app.json" }, { "path": ".
+        +/tsconfig.node.json" }]
+      4  }
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ oxfmt is in: version 0.71.0, installed as a dev dependency.
+
+  Setup
+
+  .oxfmtrc.json matches the existing code style. It turns semicolons off, uses
+  single quotes, and allows 120-character lines. It skips src/data.json, because
+  the build script regenerates that file, and bun.lock.
+
+  Two new scripts sit next to lint:
+  - bun run format rewrites files in place.
+  - bun run format:check only reports. Use it before committing.
+
+  First run
+
+  The first run changed three files, and all three were layout only:
+  - src/Page.tsx: the long <img> and style props now wrap one per line.
+  - tsconfig.json: the references array is collapsed onto one line.
+  - package.json: fields are reordered, since oxfmt sorts package.json by
+    default.
+
+  format:check now passes, and the build and lint are still clean.
+
+  The working tree is still uncommitted. It holds the React switch, the hover
+  change and the oxfmt setup. Want me to commit it as one commit, or split the
+  formatter setup into its own?
+
+✻ Baked for 32s · done 7:02 PM
+
+❯ this formatter doesnt with with webstorm? i ran format on selection code
+  block and it didnt format i don't think
+
+⏺ Web Search("oxfmt WebStorm JetBrains plugin format on save")
+  ⎿  Did 1 search in 4s
+
+⏺ Fetch(https://oxc.rs/docs/guide/usage/formatter/editors)
+  ⎿  Received 71.8KB (200 OK)
+
+⏺ Fetch(https://github.com/oxc-project/oxc-intellij-plugin)
+  ⎿  Received 295KB (200 OK)
+
+⏺ WebStorm doesn't use oxfmt on its own. Its "Reformat Code" runs WebStorm's
+  built-in formatter, which knows nothing about .oxfmtrc.json. That means your
+  selection was formatted by WebStorm's own rules, or left alone.
+
+  Fix
+
+  1. Install the Oxc plugin from the JetBrains Marketplace (Settings → Plugins →
+     search "Oxc"). The oxc team makes it. It runs oxfmt --lsp from the
+     project's own node_modules, which the reader app now has.
+  2. Turn on oxfmt formatting in the plugin's settings. The README lists format
+     on save, and hooking into Code → Reformat Code / Reformat File. I haven't
+     checked the exact settings path. It should appear under the plugin's
+     settings page once installed.
+
+  Selection formatting
+
+  Formatting a selection may still not work. The plugin docs don't say whether
+  they support range formatting. The oxfmt CLI has no range option either. It
+  always formats whole files. So use "Reformat File" or format on save, not
+  "Reformat selection". The terminal fallback always works: bun run format.
+
+  Sources:
+  - Oxc formatter editor setup
+  - Oxc plugin on JetBrains Marketplace
+  - oxc-intellij-plugin README
+
+✻ Sautéed for 34s · done 7:05 PM
+
+❯ whatever it didn't work. i ran bun run format instead.
+
+  anyway, moving on.
+
+  organize and strucutre the files. i like to use "(home)" for lanidng page or
+  just home i guess since it's not file based?
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+⏺ The user's other projects use app/(home)/, components/, lib/, data/ and the @/
+  alias. I'll mirror that, using a plain home/ folder since there's no
+  file-based router.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ The source files are reorganized to match the layout in your
+  client-turningpoint-clinic repo. Since this app has no file-based router, the
+  landing page lives in a plain home/ folder instead of (home).
+
+  src/
+    main.tsx                     mounts <App />
+    app/
+      App.tsx                    renders <Home />
+      globals.css                was style.css
+      home/
+        Home.tsx                 the reader: one Sheet per paper page
+    components/
+      reader/
+        Sheet.tsx                was Page: page image + its notes
+        NoteHighlight.tsx        one note's rects + hover state
+    data/
+      paper.json                 was data.json
+      paper.ts                   typed export: `paper`, so components skip the
+  cast
+    lib/
+      types.ts
+
+  Other changes
+
+  The @/ import alias now works, as in your other projects. It's set in
+  vite.config.ts and in tsconfig.app.json (paths).
+
+  I renamed Page to Sheet. It matches the .sheet CSS class and doesn't clash
+  with "page" meaning the home page.
+
+  bun run sync now writes to src/data/paper.json, and the oxfmt ignore list
+  points at the new path. I ran sync once to confirm it works.
+
+  Build, lint and format are clean. A headless hover check still passes: 4 rects
+  lit, then 0 after the pointer left.
+
+  Git still has one commit (023d127). Everything since then is uncommitted: the
+  React switch, hover, oxfmt and this restructure. Want it as one commit, or
+  split by step?
+
+✻ Churned for 1m 4s · done 7:10 PM
+
+❯ and i like to keep componets relating to specifc page, under the page
+  directory. so if the componets are all relating to home, let's move then
+  underr there
+
+⏺ Bash(set -e; cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; mkdir -p
+      src/app/home/components; mv src/components/reader/Sheet.tsx
+      src/components/reader/NoteH…)
+  ⎿  $ oxfmt
+     ✓ built in 98ms
+     $ oxlint
+     … +21 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/Home.tsx (+1 -1)
+      1  import { paper } from '@/data/paper'
+      2 -import { Sheet } from '@/components/reader/Sheet'
+      2 +import { Sheet } from '@/app/home/components/Sheet'
+      3
+      4  export default function Home() {
+      5    return (
+  ⎿  Created reader-app/src/app/home/components/NoteHighlight.tsx (+26 -0)
+       1 +import { useState } from 'react'
+       2 +import type { CSSProperties } from 'react'
+       3 +import type { Note } from '@/lib/types'
+       4 +
+       5 +export function NoteHighlight({ note, label }: { note: Note; la
+         +bel: string }) {
+       6 +  const [lit, setLit] = useState(false)
+       7 +
+       8 +  return note.rects.map(([x, y, w, h], i) => (
+       9 +    <div
+      10 +      key={i}
+      11 +      className={lit ? 'hl lit' : 'hl'}
+      12 +      title={label}
+      13 +      style={
+      14 +        {
+      15 +          left: `${x * 100}%`,
+      16 +          top: `${y * 100}%`,
+      17 +          width: `${w * 100}%`,
+      18 +          height: `${h * 100}%`,
+      19 +          '--c': `var(--c-${note.cat})`,
+      20 +        } as CSSProperties
+      21 +      }
+      22 +      onPointerEnter={() => setLit(true)}
+      23 +      onPointerLeave={() => setLit(false)}
+      24 +    />
+      25 +  ))
+      26 +}
+  ⎿  Created reader-app/src/app/home/components/Sheet.tsx (+23 -0)
+       1 +import type { Note } from '@/lib/types'
+       2 +import { NoteHighlight } from '@/app/home/components/NoteHighli
+         +ght'
+       3 +
+       4 +type SheetProps = {
+       5 +  page: number
+       6 +  notes: Note[]
+       7 +  cats: Record<string, string>
+       8 +}
+       9 +
+      10 +export function Sheet({ page, notes, cats }: SheetProps) {
+      11 +  return (
+      12 +    <section className="sheet" id={`p${page}`}>
+      13 +      <img
+      14 +        src={`pages/p${String(page).padStart(2, '0')}.jpg`}
+      15 +        alt={`Page ${page} of the paper`}
+      16 +        loading={page <= 2 ? 'eager' : 'lazy'}
+      17 +      />
+      18 +      {notes.map((note) => (
+      19 +        <NoteHighlight key={note.n} note={note} label={`${note.
+         +n}. ${cats[note.cat]}`} />
+      20 +      ))}
+      21 +    </section>
+      22 +  )
+      23 +}
+  ⎿  Deleted reader-app/src/components/reader/NoteHighlight.tsx (+0 -26)
+       1 -import { useState } from 'react'
+       2 -import type { CSSProperties } from 'react'
+       3 -import type { Note } from '@/lib/types'
+       4 -
+       5 -export function NoteHighlight({ note, label }: { note: Note; la
+         -bel: string }) {
+       6 -  const [lit, setLit] = useState(false)
+       7 -
+       8 -  return note.rects.map(([x, y, w, h], i) => (
+       9 -    <div
+      10 -      key={i}
+      11 -      className={lit ? 'hl lit' : 'hl'}
+      12 -      title={label}
+      13 -      style={
+      14 -        {
+      15 -          left: `${x * 100}%`,
+      16 -          top: `${y * 100}%`,
+      17 -          width: `${w * 100}%`,
+      18 -          height: `${h * 100}%`,
+      19 -          '--c': `var(--c-${note.cat})`,
+      20 -        } as CSSProperties
+      21 -      }
+      22 -      onPointerEnter={() => setLit(true)}
+      23 -      onPointerLeave={() => setLit(false)}
+      24 -    />
+      25 -  ))
+      26 -}
+  ⎿  Deleted reader-app/src/components/reader/Sheet.tsx (+0 -23)
+       1 -import type { Note } from '@/lib/types'
+       2 -import { NoteHighlight } from '@/components/reader/NoteHighligh
+         -t'
+       3 -
+       4 -type SheetProps = {
+       5 -  page: number
+       6 -  notes: Note[]
+       7 -  cats: Record<string, string>
+       8 -}
+       9 -
+      10 -export function Sheet({ page, notes, cats }: SheetProps) {
+      11 -  return (
+      12 -    <section className="sheet" id={`p${page}`}>
+      13 -      <img
+      14 -        src={`pages/p${String(page).padStart(2, '0')}.jpg`}
+      15 -        alt={`Page ${page} of the paper`}
+      16 -        loading={page <= 2 ? 'eager' : 'lazy'}
+      17 -      />
+      18 -      {notes.map((note) => (
+      19 -        <NoteHighlight key={note.n} note={note} label={`${note.
+         -n}. ${cats[note.cat]}`} />
+      20 -      ))}
+      21 -    </section>
+      22 -  )
+      23 -}
+
+  Ran 1 shell command, wrote 1 memory (ctrl+o to expand)
+
+⏺ The two reader components now live with the home page:
+
+  src/
+    main.tsx
+    app/
+      App.tsx
+      globals.css
+      home/
+        Home.tsx
+        components/
+          Sheet.tsx
+          NoteHighlight.tsx
+    data/
+      paper.json
+      paper.ts
+    lib/
+      types.ts
+
+  I updated the imports to @/app/home/components/... and removed the empty
+  top-level components/ folder. Build, lint and format are all clean. I also
+  saved this layout preference to memory, so future React scaffolds put
+  page-specific components inside the page's folder from the start.
+
+  Nothing since 023d127 is committed yet. Want one commit for all of it?
+✻ Worked for 22s · done 7:11 PM
+
+❯ and let's switch to tailwind?
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; bun add -d
+      tailwindcss @tailwindcss/vite 2>&1 | tail -3; grep -E "tailwind"
+      package.json; cat src/app/gl…)
+  ⎿  installed @tailwindcss/vite@4.3.3
+
+     17 packages installed [463.00ms]
+     … +52 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/bun.lock (+90 -0)
+       9          "react-dom": "^19.2.8",
+      10        },
+      11        "devDependencies": {
+      12 +        "@tailwindcss/vite": "^4.3.3",
+      13          "@types/node": "^24.13.3",
+      14          "@types/react": "^19.2.18",
+      15          "@types/react-dom": "^19.2.7",
+      16          "@vitejs/plugin-react": "^6.1.1",
+      17          "oxfmt": "^0.71.0",
+      18          "oxlint": "^1.81.0",
+      19 +        "tailwindcss": "^4.3.3",
+      20          "typescript": "~6.0.2",
+      21          "vite": "^8.3.0",
+      22        },
+      23      },
+      24    },
+      25    "packages": {
+      26 +    "@jridgewell/gen-mapping": ["@jridgewell/gen-mapping@0.3.13
+         +", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5
+         +.0", "@jridgewell/trace-mapping": "^0.3.24" } }, "sha512-2kkt/7
+         +niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5
+         +dvM+uUyfCg6UKCBbA=="],
+      27 +
+      28 +    "@jridgewell/remapping": ["@jridgewell/remapping@2.3.5", ""
+         +, { "dependencies": { "@jridgewell/gen-mapping": "^0.3.5", "@jr
+         +idgewell/trace-mapping": "^0.3.24" } }, "sha512-LI9u/+laYG4Ds1T
+         +DKSJW2YPrIlcVYOwi2fUC6xB43lueCjgxV4lffOCZCtYFiH6TNOX+tQKXx97T4I
+         +KHbhyHEQ=="],
+      29 +
+      30 +    "@jridgewell/resolve-uri": ["@jridgewell/resolve-uri@3.1.2"
+         +, "", {}, "sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtw
+         +VJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw=="],
+      31 +
+      32 +    "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-code
+         +c@1.6.0", "", {}, "sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpm
+         +HA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw=="],
+      33 +
+      34 +    "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.
+         +3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1
+         +.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR
+         ++SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao
+         +3TWCMtmfV8Nu1twOLAw=="],
+      35 +
+      36      "@oxc-project/types": ["@oxc-project/types@0.151.0", "", {}
+          , "sha512-J1yXrIlNDZVzE3ada310xeAw7nH8yCAyLPuUIsjKatFPmfn5bS1oW
+          +cM+QsGOtVWd5nhSpbwZWx/rue+r5Z+PA=="],
+      37
+      38      "@oxfmt/binding-android-arm-eabi": ["@oxfmt/binding-android
+          -arm-eabi@0.71.0", "", { "os": "android", "cpu": "arm" }, "sha5
+          12-l31EyBfB4egJeFua11aQFEUE9nnDtfpWCadqQovm0WL30t/yUHtdFl/5HyFX
+          vd5xT8Ewh3U4TI9f30GowrQ1fw=="],
+     ...
+      143
+      144      "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "
+           ", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04U
+           tpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
+      145
+      146 +    "@tailwindcss/node": ["@tailwindcss/node@4.3.3", "", { "de
+          +pendencies": { "@jridgewell/remapping": "^2.3.5", "enhanced-re
+          +solve": "^5.24.1", "jiti": "^2.7.0", "lightningcss": "1.32.0",
+          + "magic-string": "^0.30.21", "source-map-js": "^1.2.1", "tailw
+          +indcss": "4.3.3" } }, "sha512-/T8IKEsf9VTU6tLjgC7+sv2mOPtQxzE2
+          +jMw7u4Tt40Tx+QSZxpzh95/H6cMKoja9XuW7iMdLJYBB0o9G1CaAgg=="],
+      147 +
+      148 +    "@tailwindcss/oxide": ["@tailwindcss/oxide@4.3.3", "", { "
+          +optionalDependencies": { "@tailwindcss/oxide-android-arm64": "
+          +4.3.3", "@tailwindcss/oxide-darwin-arm64": "4.3.3", "@tailwind
+          +css/oxide-darwin-x64": "4.3.3", "@tailwindcss/oxide-freebsd-x6
+          +4": "4.3.3", "@tailwindcss/oxide-linux-arm-gnueabihf": "4.3.3"
+          +, "@tailwindcss/oxide-linux-arm64-gnu": "4.3.3", "@tailwindcss
+          +/oxide-linux-arm64-musl": "4.3.3", "@tailwindcss/oxide-linux-x
+          +64-gnu": "4.3.3", "@tailwindcss/oxide-linux-x64-musl": "4.3.3"
+          +, "@tailwindcss/oxide-wasm32-wasi": "4.3.3", "@tailwindcss/oxi
+          +de-win32-arm64-msvc": "4.3.3", "@tailwindcss/oxide-win32-x64-m
+          +svc": "4.3.3" } }, "sha512-krXjAikiaFSPaK/FkAQT5UTx3VormQaiZ5h
+          +BFlJZ9UFQGB/rwg1MZIhHAG9smMQRTdyJxP6Qt5MwMtdyU5FWrA=="],
+      149 +
+      150 +    "@tailwindcss/oxide-android-arm64": ["@tailwindcss/oxide-a
+          +ndroid-arm64@4.3.3", "", { "os": "android", "cpu": "arm64" },
+          +"sha512-Y85A2gmPSkl5Ve5qR86GL4HT509cFqQh1aes9p3sSkyTPwt0Pppf3G
+          +kwGe4JPACcRYjgJIEhQgM6dBClnr0NYw=="],
+      151 +
+      152 +    "@tailwindcss/oxide-darwin-arm64": ["@tailwindcss/oxide-da
+          +rwin-arm64@4.3.3", "", { "os": "darwin", "cpu": "arm64" }, "sh
+          +a512-BiaWatpBcERQFDlOjRDpIVXuFK5PJez5SA4JMg6VYZdBYU+qKfV/vqjcI
+          +s+IYmtitf1xYQZTwXvU/8y4lfZUGw=="],
+     … 101 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/package.json (+2 -0)
+      17      "react-dom": "^19.2.8"
+      18    },
+      19    "devDependencies": {
+      20 +    "@tailwindcss/vite": "^4.3.3",
+      21      "@types/node": "^24.13.3",
+      22      "@types/react": "^19.2.18",
+      23      "@types/react-dom": "^19.2.7",
+      24      "@vitejs/plugin-react": "^6.1.1",
+      25      "oxfmt": "^0.71.0",
+      26      "oxlint": "^1.81.0",
+      27 +    "tailwindcss": "^4.3.3",
+      28      "typescript": "~6.0.2",
+      29      "vite": "^8.3.0"
+      30    }
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ Bash(set -e; cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app
+      cat > vite.config.ts <<'EOF'…)
+  ⎿  $ oxfmt
+     dist/assets/index-Csrw8Yv8.js   241.10 kB │ gzip: 77.08 kB
+     … +11 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/.oxfmtrc.json (+4 -1)
+       3    "semi": false,
+       4    "singleQuote": true,
+       5    "printWidth": 120,
+       6 -  "ignorePatterns": ["src/data/paper.json", "bun.lock"]
+       6 +  "ignorePatterns": ["src/data/paper.json", "bun.lock"],
+       7 +  "sortTailwindcss": {
+       8 +    "stylesheet": "./src/app/globals.css"
+       9 +  }
+      10  }
+  ⎿  Updated reader-app/index.html (+1 -1)
+       6      <meta name="viewport" content="width=device-width, initial-
+          scale=1.0" />
+       7      <title>WellScreen Annotated</title>
+       8    </head>
+       9 -  <body>
+       9 +  <body class="bg-ground px-4 font-sans text-ink">
+      10      <div id="root"></div>
+      11      <script type="module" src="/src/main.tsx"></script>
+      12    </body>
+  ⎿  Updated reader-app/src/app/globals.css (+8 -40)
+       1 -:root {
+       2 -  font-family: system-ui, sans-serif;
+       3 -  background: #f3f3f1;
+       4 -  color: #1c1c1a;
+       1 +@import 'tailwindcss';
+       2 +
+       3 +@theme {
+       4 +  --color-ground: #f3f3f1;
+       5 +  --color-ink: #1c1c1a;
+       6 +}
+       7
+       8 +/* Highlights pick these by category name at runtime, so they s
+         +tay plain variables Tailwind can't tree-shake. */
+       9 +:root {
+      10    --c-central: #f26d6d;
+      11    --c-rq: #ffab3d;
+      12    --c-def: #f5dc3a;
+     ...
+      16    --c-policy: #4fd3d3;
+      17    --c-mine: #6fb0ff;
+      18  }
+      15 -
+      16 -body {
+      17 -  margin: 0;
+      18 -  padding-inline: 16px;
+      19 -}
+      20 -
+      21 -.pages {
+      22 -  display: grid;
+      23 -  gap: 32px;
+      24 -  justify-items: center;
+      25 -  padding-block: 32px;
+      26 -}
+      27 -
+      28 -.sheet {
+      29 -  position: relative;
+      30 -  width: min(100%, 816px);
+      31 -  box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+      32 -}
+      33 -
+      34 -.sheet img {
+      35 -  display: block;
+     … 15 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/Home.tsx (+1 -1)
+      3
+      4  export default function Home() {
+      5    return (
+      6 -    <main className="pages">
+      6 +    <main className="grid justify-items-center gap-8 py-8">
+      7        {Array.from({ length: paper.pages }, (_, i) => i + 1).map(
+         (p) => (
+      8          <Sheet key={p} page={p} notes={paper.notes.filter((n) =>
+          n.page === p)} cats={paper.cats} />
+      9        ))}
+  ⎿  Updated reader-app/src/app/home/components/NoteHighlight.tsx (+1 -1)
+       8    return note.rects.map(([x, y, w, h], i) => (
+       9      <div
+      10        key={i}
+      11 -      className={lit ? 'hl lit' : 'hl'}
+      11 +      className={`absolute bg-(--c) mix-blend-multiply transiti
+         +on-opacity duration-150 ${lit ? 'opacity-62' : 'opacity-34'}`}
+      12        title={label}
+      13        style={
+      14          {
+  ⎿  … 2 more files changed
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Tailwind is in and the build passes. Next I'm fixing a typo in my check script
+  to confirm hover and mobile layout.
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+⏺ Styling now runs on Tailwind v4, through the official @tailwindcss/vite
+  plugin. The page looks and behaves the same as before. A headless check found
+  20 pages, no sideways scroll at desktop or phone width, and hover still taking
+  a note from 0.34 to 0.62 opacity and back.
+
+  What changed
+
+  globals.css is now just @import 'tailwindcss', plus two small pieces:
+  - An @theme block with two colors, ground (#f3f3f1) and ink (#1c1c1a). That
+    gives you bg-ground and text-ink utilities. The body uses them in
+    index.html.
+  - The 8 category colors stay as plain :root variables. Highlights build the
+    color name at runtime (var(--c-${cat})). Tailwind can't see names built that
+    way, so it would drop them if they lived in @theme.
+
+  The old CSS classes are all utilities now:
+  - Home: grid justify-items-center gap-8 py-8
+  - Sheet: relative w-full max-w-[816px] plus the shadow
+  - NoteHighlight: absolute bg-(--c) mix-blend-multiply transition-opacity
+    duration-150, with opacity-62 when lit and opacity-34 when not
+
+  oxfmt now sorts Tailwind classes too (sortTailwindcss in .oxfmtrc.json,
+  pointed at globals.css). bun run format orders them the way
+  prettier-plugin-tailwindcss would.
+
+  vite.config.ts changed, so restart bun dev if 5174 looks unstyled. Build, lint
+  and format are clean. Everything since 023d127 is still uncommitted.
+
+✻ Churned for 1m 27s · done 7:13 PM
+
+❯ neat. and you konw how i like to use cn to group like css/tw classes
+  togethere? so we'll need that please. i think there's a faster cn right now
+  or something?
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+⏺ Web Search("faster alternative to clsx tailwind-merge cn utility 2026")
+  ⎿  Did 1 search in 7s
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Found it: the "faster cn" is shadcn's new cn package (v0.4.0, published 9/22).
+  I'll install it and read its types before wiring it in.
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; bun add cn 2>&1 |
+      tail -1; ls node_modules/cn node_modules/cn/dist | head -20; python3 -c
+      "import json;p…)
+  ⎿  1 package installed [201.00ms]
+     node_modules/cn:
+     bin
+     … +196 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/bun.lock (+3 -0)
+       5      "": {
+       6        "name": "reader-app",
+       7        "dependencies": {
+       8 +        "cn": "^0.4.0",
+       9          "react": "^19.2.8",
+      10          "react-dom": "^19.2.8",
+      11        },
+     ...
+      182
+      183      "@vitejs/plugin-react": ["@vitejs/plugin-react@6.1.1", "",
+            { "dependencies": { "@rolldown/pluginutils": "^1.0.1" }, "pee
+           rDependencies": { "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0"
+           , "babel-plugin-react-compiler": "^1.0.0", "oxc-transform-reac
+           t": "^0.145.0", "vite": "^8.0.0" }, "optionalPeers": ["@rolldo
+           wn/plugin-babel", "babel-plugin-react-compiler", "oxc-transfor
+           m-react"] }, "sha512-yxLaQV9gkhS8ezJqCM6+ndU7mDY6gqAg75NQ+0Ijw
+           EI8IYOmQCgkRwHKVSfWXW076DsqMo0Dk+0FK1U+M5RgFw=="],
+      184
+      185 +    "cn": ["cn@0.4.0", "", { "bin": { "cn": "bin/cn.mjs" } },
+          +"sha512-qOAeUhPwPzBxx6jaeQdo646XIKliKHc2j1ZF7Ngb1o0pJZKH5gq8Fk
+          +A0aVdUdPFUDXNXyUCXpCtoJISo6dhizg=="],
+      186 +
+      187      "csstype": ["csstype@3.2.3", "", {}, "sha512-z1HGKcYy2xA8A
+           GQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T
+           /0kCiOYpAIQ=="],
+      188
+      189      "detect-libc": ["detect-libc@2.1.2", "", {}, "sha512-Btj2B
+           OOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWY
+           Zm05i/of7io4mzihBtQ=="],
+  ⎿  Updated reader-app/package.json (+1 -0)
+      13      "preview": "vite preview"
+      14    },
+      15    "dependencies": {
+      16 +    "cn": "^0.4.0",
+      17      "react": "^19.2.8",
+      18      "react-dom": "^19.2.8"
+      19    },
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(set -e; cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app
+      printf "export { cn } from 'cn'\n" > src/lib/utils.ts…)
+  ⎿  $ oxfmt
+     ✓ built in 127ms
+     $ oxlint
+     … +36 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/.oxfmtrc.json (+2 -1)
+       5    "printWidth": 120,
+       6    "ignorePatterns": ["src/data/paper.json", "bun.lock"],
+       7    "sortTailwindcss": {
+       8 -    "stylesheet": "./src/app/globals.css"
+       8 +    "stylesheet": "./src/app/globals.css",
+       9 +    "functions": ["cn"]
+      10    }
+      11  }
+  ⎿  Updated reader-app/src/app/home/components/NoteHighlight.tsx (+7 -1)
+      1  import { useState } from 'react'
+      2  import type { CSSProperties } from 'react'
+      3  import type { Note } from '@/lib/types'
+      4 +import { cn } from '@/lib/utils'
+      5
+      6  export function NoteHighlight({ note, label }: { note: Note; lab
+         el: string }) {
+      7    const [lit, setLit] = useState(false)
+     ...
+       9    return note.rects.map(([x, y, w, h], i) => (
+      10      <div
+      11        key={i}
+      11 -      className={`absolute bg-(--c) mix-blend-multiply transiti
+         -on-opacity duration-150 ${lit ? 'opacity-62' : 'opacity-34'}`}
+      12 +      className={cn(
+      13 +        'absolute mix-blend-multiply',
+      14 +        'bg-(--c)',
+      15 +        'transition-opacity duration-150',
+      16 +        lit ? 'opacity-62' : 'opacity-34',
+      17 +      )}
+      18        title={label}
+      19        style={
+      20          {
+  ⎿  Updated reader-app/src/app/home/components/Sheet.tsx (+2 -1)
+      1  import type { Note } from '@/lib/types'
+      2 +import { cn } from '@/lib/utils'
+      3  import { NoteHighlight } from '@/app/home/components/NoteHighlig
+         ht'
+      4
+      5  type SheetProps = {
+     ...
+      10
+      11  export function Sheet({ page, notes, cats }: SheetProps) {
+      12    return (
+      12 -    <section className="relative w-full max-w-[816px] shadow-[0
+         -_1px_4px_rgb(0_0_0/0.15)]" id={`p${page}`}>
+      13 +    <section className={cn('relative w-full max-w-[816px]', 'sh
+         +adow-[0_1px_4px_rgb(0_0_0/0.15)]')} id={`p${page}`}>
+      14        <img
+      15          src={`pages/p${String(page).padStart(2, '0')}.jpg`}
+      16          alt={`Page ${page} of the paper`}
+  ⎿  Created reader-app/src/lib/utils.ts (+1 -0)
+      1 +export { cn } from 'cn'
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ cn is in. The faster one you were thinking of is shadcn's new cn package, made
+  by shadcn and Aiden Bai. It replaces clsx plus tailwind-merge in one package
+  with the same API. The README claims it's about 30× faster, with output
+  identical to tailwind-merge. It's v0.4.0, published 9/22, so it's new and
+  still pre-1.0.
+
+  Setup
+
+  src/lib/utils.ts is one line, export { cn } from 'cn', so imports read import
+  { cn } from '@/lib/utils' like your other projects. If cn ever causes trouble,
+  that file is the only place to swap it back to twMerge(clsx(...)).
+
+  oxfmt now also sorts the classes inside cn(...) calls (functions: ["cn"] in
+  .oxfmtrc.json), not just className strings.
+
+  Where it's used
+
+  Classes are grouped one concern per string, the same way as your Portfolio's
+  buttonBrandVariant:
+
+  className={cn(
+    'absolute mix-blend-multiply',
+    'bg-(--c)',
+    'transition-opacity duration-150',
+    lit ? 'opacity-62' : 'opacity-34',
+  )}
+
+  Sheet uses cn('relative w-full max-w-[816px]', 'shadow-[...]'). Home's <main>
+  is all layout, so it stays a plain string.
+
+  Build, lint and format are clean, and the hover check still passes. I skipped
+  the package's optional cn build Vite plugin, which trims the bundle further.
+  At this app's size, the 26 KB default doesn't matter.
+
+  Sources:
+  - shadcn's cn README (jsdelivr)
+  - shadcn's New cn Package article
+  - cnfast README
+  - mxcn on npm
+  - Tailwind Variants class resolution
+
+✻ Cooked for 1m 24s · done 7:15 PM
+
+❯ alright neat. i've made some edits in NoteHighlit. we can commit all these
+  now
+
+  Read 1 file, ran 2 shell commands (ctrl+o to expand)
+
+⏺ Everything is committed as c950d86 feat: reader-app; moved to react with
+  tailwind, cn and oxfmt, restructured into app/home, added note hover state. It
+  includes your NoteHighlight edits. The working tree is clean. Before
+  committing, I checked that format, build and lint all pass.
+
+  Your edits dropped the resting opacity to 25 and made each highlight 1.2×
+  taller. The extra height only extends downward, because top stays the same.
+  The highlight now hangs a bit below each line instead of centering on it. To
+  center it, also shift top up by half the extra height: (y - h * 0.1) * 100. If
+  the offset is intentional, ignore this.
+
+✻ Crunched for 26s · done 7:19 PM
+
+❯ alright now we need to get the right notes on the screen when the pointer is
+  in a piece of hghiglithed area
+
+⏺ The plan is to hit-test at the sheet level, so a pointer over shared lines
+  shows every note there. That also fixes the note 1/3 and 18/19 overlap.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(set -e; cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app
+      cat > src/app/home/components/Sheet.tsx <<'EOF'…)
+  ⎿  $ oxfmt
+     ✓ built in 122ms
+     $ oxlint
+     … +13 lines (ctrl+o to expand)
+  ⎿  Created reader-app/src/app/home/components/NoteCard.tsx (+45 -0)
+       1 +import type { CSSProperties } from 'react'
+       2 +import type { Note } from '@/lib/types'
+       3 +import { cn } from '@/lib/utils'
+       4 +
+       5 +type NoteCardProps = {
+       6 +  notes: Note[]
+       7 +  cats: Record<string, string>
+       8 +}
+       9 +
+      10 +export function NoteCard({ notes, cats }: NoteCardProps) {
+      11 +  const rects = notes.flatMap((n) => n.rects)
+      12 +  const left = Math.min(...rects.map(([x]) => x))
+      13 +  const right = Math.max(...rects.map(([x, , w]) => x + w))
+      14 +  const top = Math.min(...rects.map(([, y]) => y))
+      15 +  const bottom = Math.max(...rects.map(([, y, , h]) => y + h))
+      16 +
+      17 +  const place: CSSProperties = {
+      18 +    ...(left < 0.5 ? { left: `${left * 100}%` } : { right: `${(
+         +1 - right) * 100}%` }),
+      19 +    ...(bottom < 0.6 ? { top: `${bottom * 100 + 1}%` } : { bott
+         +om: `${(1 - top) * 100 + 1}%` }),
+      20 +  }
+      21 +
+      22 +  return (
+      23 +    <aside
+      24 +      className={cn(
+      25 +        'pointer-events-none absolute z-10 w-[40%] min-w-64',
+      26 +        'grid gap-3 rounded-md bg-white p-3 shadow-lg',
+      27 +        'text-sm leading-snug text-ink',
+      28 +      )}
+      29 +      style={place}
+      30 +    >
+      31 +      {notes.map((note) => (
+      32 +        <div
+      33 +          key={note.n}
+      34 +          className="grid gap-1 border-l-4 border-(--c) pl-3"
+      35 +          style={{ '--c': `var(--c-${note.cat})` } as CSSProper
+         +ties}
+      36 +        >
+      37 +          <p className="text-xs font-medium tracking-wide text-
+         +ink/60 uppercase">
+      38 +            {note.n}. {cats[note.cat]}
+      39 +          </p>
+      40 +          <p>{note.text}</p>
+     … 5 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteHighlight.tsx (+2 -7)
+       1 -import { useState } from 'react'
+       1  import type { CSSProperties } from 'react'
+       2  import type { Note } from '@/lib/types'
+       3  import { cn } from '@/lib/utils'
+       4
+       6 -export function NoteHighlight({ note, label }: { note: Note; la
+         -bel: string }) {
+       7 -  const [lit, setLit] = useState(false)
+       8 -
+       5 +export function NoteHighlight({ note, lit }: { note: Note; lit:
+         + boolean }) {
+       6    return note.rects.map(([x, y, w, h], i) => (
+       7      <div
+       8        key={i}
+       9 +      data-note={note.n}
+      10        className={cn(
+      11          'absolute mix-blend-multiply',
+      12          'bg-(--c)',
+      13          'transition-opacity duration-150',
+      14          lit ? 'opacity-62' : 'opacity-25',
+      15        )}
+      18 -      title={label}
+      16        style={
+      17          {
+      18            left: `${x * 100}%`,
+     ...
+      22            '--c': `var(--c-${note.cat})`,
+      23          } as CSSProperties
+      24        }
+      28 -      onPointerEnter={() => setLit(true)}
+      29 -      onPointerLeave={() => setLit(false)}
+      25      />
+      26    ))
+      27  }
+  ⎿  Updated reader-app/src/app/home/components/Sheet.tsx (+25 -2)
+      1 +import { useState } from 'react'
+      2 +import type { PointerEvent } from 'react'
+      3  import type { Note } from '@/lib/types'
+      4  import { cn } from '@/lib/utils'
+      5 +import { NoteCard } from '@/app/home/components/NoteCard'
+      6  import { NoteHighlight } from '@/app/home/components/NoteHighlig
+         ht'
+      7
+      8  type SheetProps = {
+     ...
+      12  }
+      13
+      14  export function Sheet({ page, notes, cats }: SheetProps) {
+      15 +  const [active, setActive] = useState<number[]>([])
+      16 +
+      17 +  const pick = (e: PointerEvent<HTMLElement>) => {
+      18 +    const sheet = e.currentTarget
+      19 +    const hits = new Set<number>()
+      20 +    for (const el of document.elementsFromPoint(e.clientX, e.cl
+         +ientY)) {
+      21 +      if (el instanceof HTMLElement && el.dataset.note && sheet
+         +.contains(el)) hits.add(Number(el.dataset.note))
+      22 +    }
+      23 +    const next = notes.filter((n) => hits.has(n.n)).map((n) =>
+         +n.n)
+      24 +    setActive((prev) => (prev.join() === next.join() ? prev : n
+         +ext))
+      25 +  }
+      26 +
+      27    return (
+      13 -    <section className={cn('relative w-full max-w-[816px]', 'sh
+         -adow-[0_1px_4px_rgb(0_0_0/0.15)]')} id={`p${page}`}>
+      28 +    <section
+      29 +      className={cn('relative w-full max-w-[816px]', 'shadow-[0
+         +_1px_4px_rgb(0_0_0/0.15)]')}
+      30 +      id={`p${page}`}
+      31 +      onPointerMove={pick}
+      32 +      onPointerDown={pick}
+      33 +      // Touch fires pointerleave right after every tap, so kee
+         +p the card open until the next tap.
+      34 +      onPointerLeave={(e) => e.pointerType !== 'touch' && setAc
+         +tive([])}
+      35 +    >
+      36        <img
+      37          src={`pages/p${String(page).padStart(2, '0')}.jpg`}
+      38          alt={`Page ${page} of the paper`}
+     ...
+      40          className="w-full"
+      41        />
+      42        {notes.map((note) => (
+      21 -        <NoteHighlight key={note.n} note={note} label={`${note.
+         -n}. ${cats[note.cat]}`} />
+     … 6 more lines (ctrl+o to expand)
+
+  Read 2 files, ran 1 shell command (ctrl+o to expand)
+
+⏺ Hovering a highlighted line now opens a note card. The card shows every note
+  anchored where the pointer is, so the overlapping pairs finally work: hovering
+  the abstract on page 1 shows notes 1 and 3 together, and page 4 shows 18 and
+  19. Build, lint and format are clean. I haven't committed.
+
+  How it works
+
+  Hit-testing moved up from each highlight to Sheet. On pointer move, Sheet asks
+  the browser which elements are under the pointer
+  (document.elementsFromPoint). It then collects the data-note numbers from the
+  highlight divs it finds. Because this reads the rendered boxes, your 1.2×
+  height change counts automatically.
+
+  NoteHighlight is now display-only: it takes lit as a prop, has no state or
+  handlers, and no longer sets a title tooltip.
+
+  The new NoteCard.tsx in app/home/components/ lists each active note: number,
+  category label, and your text, with a left border in the category color.
+  Placement follows the highlighted passage:
+  - Horizontally, it lines up with the passage's column. It sits on the left
+    edge for left-column notes and the right edge for right-column notes, so it
+    never runs off a phone screen.
+  - Vertically, it opens below the passage, or above it once the passage is past
+    60% of the page height.
+
+  Touch
+
+  Phones get the card on tap. The card stays open until you tap somewhere else
+  on the page. Touch fires pointerleave right after every tap, so the handler
+  ignores leave events from touch. That's the one comment in the code.
+
+  Checked headlessly
+
+  - Desktop: the p1 and p4 overlaps each show 2 notes, single notes show 1, and
+    a note on the last page opens above the passage. The card closes when the
+    pointer leaves.
+  - Phone at 390 px: tapping note 5 opens its card inside the screen, with no
+    sideways scroll.
+
+  Worth knowing
+
+  The card has pointer-events-none. That keeps moving the pointer across the
+  card from closing it or blocking highlights underneath. It also means you
+  can't select text in the card or scroll it. A long card, like 1 plus 3
+  together, can run past the bottom of the screen on a laptop.
+✻ Sautéed for 1m 54s · done 7:22 PM
+
+❯ alright now let's add some motion/transition to it's apperance. and let's
+  blur the page when a note is on
+
+⏺ Skill(animate)
+  ⎿  Successfully loaded skill
+
+⏺ The card animation is set: a sub-200ms fade-and-scale-in with strong ease-out
+  from 0.96, plus a shorter exit, and the page blurs while keeping the hovered
+  passage sharp when a note is open.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(set -e; cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app
+      cat > src/app/home/components/NoteHighlight.tsx <<'EOF'…)
+  ⎿  $ oxfmt
+     ✓ built in 145ms
+     $ oxlint
+     … +7 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/globals.css (+2 -0)
+       3  @theme {
+       4    --color-ground: #f3f3f1;
+       5    --color-ink: #1c1c1a;
+       6 +
+       7 +  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+       8  }
+       9
+      10  /* Highlights pick these by category name at runtime, so they s
+          tay plain variables Tailwind can't tree-shake. */
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+22 -3)
+       5  type NoteCardProps = {
+       6    notes: Note[]
+       7    cats: Record<string, string>
+       8 +  open: boolean
+       9  }
+      10
+      10 -export function NoteCard({ notes, cats }: NoteCardProps) {
+      11 +export function NoteCard({ notes, cats, open }: NoteCardProps)
+         +{
+      12    const rects = notes.flatMap((n) => n.rects)
+      13    const left = Math.min(...rects.map(([x]) => x))
+      14    const right = Math.max(...rects.map(([x, , w]) => x + w))
+      15    const top = Math.min(...rects.map(([, y]) => y))
+      16    const bottom = Math.max(...rects.map(([, y, , h]) => y + h))
+      17
+      18 +  const onLeft = left < 0.5
+      19 +  const below = bottom < 0.6
+      20    const place: CSSProperties = {
+      18 -    ...(left < 0.5 ? { left: `${left * 100}%` } : { right: `${(
+         -1 - right) * 100}%` }),
+      19 -    ...(bottom < 0.6 ? { top: `${bottom * 100 + 1}%` } : { bott
+         -om: `${(1 - top) * 100 + 1}%` }),
+      21 +    ...(onLeft ? { left: `${left * 100}%` } : { right: `${(1 -
+         +right) * 100}%` }),
+      22 +    ...(below ? { top: `${bottom * 100 + 1}%` } : { bottom: `${
+         +(1 - top) * 100 + 1}%` }),
+      23    }
+      24 +  const origin = below
+      25 +    ? onLeft
+      26 +      ? 'origin-top-left'
+      27 +      : 'origin-top-right'
+      28 +    : onLeft
+      29 +      ? 'origin-bottom-left'
+      30 +      : 'origin-bottom-right'
+      31 +  const tucked = cn(
+      32 +    'opacity-0 motion-safe:scale-96',
+      33 +    below ? 'motion-safe:-translate-y-1' : 'motion-safe:transla
+         +te-y-1',
+      34 +  )
+      35
+      36    return (
+      37      <aside
+     ...
+      39          'pointer-events-none absolute z-10 w-[40%] min-w-64',
+      40          'grid gap-3 rounded-md bg-white p-3 shadow-lg',
+      41          'text-sm leading-snug text-ink',
+      42 +        'transition-[opacity,scale,translate] ease-out-expo',
+     … 7 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteHighlight.tsx (+51 -22)
+       2  import type { Note } from '@/lib/types'
+       3  import { cn } from '@/lib/utils'
+       4
+       5 -export function NoteHighlight({ note, lit }: { note: Note; lit:
+         - boolean }) {
+       6 -  return note.rects.map(([x, y, w, h], i) => (
+       7 -    <div
+       8 -      key={i}
+       9 -      data-note={note.n}
+      10 -      className={cn(
+      11 -        'absolute mix-blend-multiply',
+      12 -        'bg-(--c)',
+      13 -        'transition-opacity duration-150',
+      14 -        lit ? 'opacity-62' : 'opacity-25',
+      15 -      )}
+      16 -      style={
+      17 -        {
+      18 -          left: `${x * 100}%`,
+      19 -          top: `${y * 100}%`,
+      20 -          width: `${w * 100}%`,
+      21 -          height: `${h * 100 * 1.2}%`,
+      22 -          '--c': `var(--c-${note.cat})`,
+      23 -        } as CSSProperties
+      24 -      }
+      25 -    />
+      26 -  ))
+       5 +export type HighlightState = 'idle' | 'lit' | 'dim'
+       6 +
+       7 +type NoteHighlightProps = {
+       8 +  note: Note
+       9 +  src: string
+      10 +  state: HighlightState
+      11 +}
+      12 +
+      13 +export function NoteHighlight({ note, src, state }: NoteHighlig
+         +htProps) {
+      14 +  return note.rects.map(([x, y, w, h], i) => {
+      15 +    const hh = h * 1.2
+      16 +    return (
+      17 +      <div
+      18 +        key={i}
+      19 +        data-note={note.n}
+     … 37 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/Sheet.tsx (+23 -9)
+      11    cats: Record<string, string>
+      12  }
+      13
+      14 +const same = (a: number[], b: number[]) => a.join() === b.join(
+         +)
+      15 +
+      16  export function Sheet({ page, notes, cats }: SheetProps) {
+      17    const [active, setActive] = useState<number[]>([])
+      18 +  // The card keeps the last notes it showed so it can fade out
+         + with its content still in it.
+      19 +  const [shown, setShown] = useState<number[]>([])
+      20 +  const src = `pages/p${String(page).padStart(2, '0')}.jpg`
+      21 +  const on = active.length > 0
+      22
+      23    const pick = (e: PointerEvent<HTMLElement>) => {
+      24      const sheet = e.currentTarget
+     ...
+      27        if (el instanceof HTMLElement && el.dataset.note && sheet
+          .contains(el)) hits.add(Number(el.dataset.note))
+      28      }
+      29      const next = notes.filter((n) => hits.has(n.n)).map((n) =>
+          n.n)
+      24 -    setActive((prev) => (prev.join() === next.join() ? prev : n
+         -ext))
+      30 +    setActive((prev) => (same(prev, next) ? prev : next))
+      31 +    if (next.length > 0) setShown((prev) => (same(prev, next) ?
+         + prev : next))
+      32    }
+      33
+      34    return (
+     ...
+      40        // Touch fires pointerleave right after every tap, so kee
+          p the card open until the next tap.
+      41        onPointerLeave={(e) => e.pointerType !== 'touch' && setAc
+          tive([])}
+      42      >
+      36 -      <img
+      37 -        src={`pages/p${String(page).padStart(2, '0')}.jpg`}
+      38 -        alt={`Page ${page} of the paper`}
+      39 -        loading={page <= 2 ? 'eager' : 'lazy'}
+      40 -        className="w-full"
+      41 -      />
+      43 +      <div className="overflow-hidden">
+      44 +        <img
+      45 +          src={src}
+      46 +          alt={`Page ${page} of the paper`}
+      47 +          loading={page <= 2 ? 'eager' : 'lazy'}
+      48 +          className={cn('w-full', 'transition-[filter] duration
+         +-200 ease-out', on && 'blur-[3px]')}
+      49 +        />
+      50 +      </div>
+     … 14 more lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Everything compiled. Next I'll screenshot the hover state to check the sharp
+  slice lines up with the blurred page.
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+⏺ The card now animates, and the page blurs behind it. The passage you're
+  hovering stays sharp, so you can read the note and its text side by side.
+  Build, lint and format are clean. I haven't committed.
+
+  Card motion
+
+  The card fades in from 0.96 scale with a 4 px nudge from the passage's side,
+  over 200 ms. It grows out of the corner nearest the passage: top-left when it
+  opens below a left-column passage, bottom-right when it opens above a
+  right-column one, and so on.
+
+  Closing is a quicker 120 ms, since the reader has already moved on. The card
+  also keeps its last notes while it fades, so the text doesn't blank out
+  mid-exit.
+
+  The curve is a strong ease-out, cubic-bezier(0.19, 1, 0.22, 1), added to
+  @theme as ease-out-expo. Most of the movement lands in the first frames, so it
+  feels instant without popping. Tailwind's starting: variant (CSS
+  @starting-style) covers the first appearance. After that, the card stays
+  mounted and plain transitions handle it. That means a card interrupted
+  mid-fade reverses smoothly instead of restarting.
+
+  Reduced motion: under prefers-reduced-motion, the scale and nudge turn off and
+  only the fade remains.
+
+  Page blur
+
+  While a note is on, the page image blurs to 3 px over 200 ms, and the other
+  highlights blur with it. The hovered passage stays sharp because each lit
+  highlight now draws an unblurred slice of the page image behind its color. The
+  slice is a background-image of the same JPG, cropped to the highlight's box,
+  so it lines up exactly. Your 1.2× height is included in that math.
+
+  Checked headlessly
+
+  On hover, the card went from 0 to 1 opacity and 0.96 to 1 scale in about 200
+  ms, with the blur ramping from 0 to 3 px alongside. On leave, it faded out in
+  about 120 ms. The screenshot shows the note 2 card above the passage, the
+  passage crisp, and the rest of the page soft.
+
+  NoteHighlight now takes a state prop (idle, lit or dim) instead of lit, plus
+  the page src for the slice. Each rect is a small wrapper holding the slice and
+  the color layer.
+
+✻ Brewed for 2m 22s · done 7:26 PM
+
+❯ now let's add backdrop too a bit to sort of spotlight on the highlighted
+  area/note?
+
+⏺ Bash(set -e; cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; git
+      status --short; python3 - <<'EOF'
+      def sub(p,a,b):…)
+  ⎿   M src/app/globals.css
+      M src/app/home/components/NoteHighlight.tsx
+      M src/app/home/components/Sheet.tsx
+     … +6 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteHighlight.tsx (+1 -1)
+      17        <div
+      18          key={i}
+      19          data-note={note.n}
+      20 -        className="absolute"
+      20 +        className={cn('absolute', state === 'lit' && 'z-2')}
+      21          style={
+      22            {
+      23              left: `${x * 100}%`,
+  ⎿  Updated reader-app/src/app/home/components/Sheet.tsx (+8 -0)
+      48            className={cn('w-full', 'transition-[filter] duration
+          -200 ease-out', on && 'blur-[3px]')}
+      49          />
+      50        </div>
+      51 +      <div
+      52 +        className={cn(
+      53 +          'pointer-events-none absolute inset-0 z-1',
+      54 +          'bg-ink/20',
+      55 +          'transition-opacity duration-200 ease-out',
+      56 +          on ? 'opacity-100' : 'opacity-0',
+      57 +        )}
+      58 +      />
+      59        {notes.map((note) => (
+      60          <NoteHighlight
+      61            key={note.n}
+  ⎿  (timeout 2m)
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ A backdrop now dims the page while a note is on. The result reads as a
+  spotlight: the page goes blurred and grey, the hovered passage stays bright
+  and sharp, and the white card sits on top.
+
+  How it's layered
+
+  The backdrop is a bg-ink/20 layer over the page, at 20% of your ink color. It
+  fades in and out with the blur (200 ms, ease-out). It has pointer-events-none,
+  so hovering and hit-testing work exactly as before.
+
+  The stacking order, bottom to top:
+  1. The blurred page image and the other dimmed highlights.
+  2. The backdrop (z-1).
+  3. The lit passage (z-2), whose unblurred slice now reads as a lit window.
+  4. The card (z-10).
+
+  Raising the lit passage to z-2 has a side effect that works in our favor. Its
+  color layer now blends only with its own sharp slice, not with the dimmed
+  layers underneath, so the category color stays clean.
+
+  The spotlight covers the hovered page only, the same area as the blur.
+  Neighboring pages above and below stay bright. If you'd rather dim the whole
+  screen, the backdrop can move up to Home as a fixed layer.
+
+  Build, lint and format are clean, and nothing is committed yet. The motion,
+  blur and backdrop are all uncommitted, along with NoteCard.tsx.
+
+✻ Worked for 38s · done 7:30 PM
+
+❯ i want to view this from my phone, can you expost network
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      p='vite.config.ts';s=open(p).read()…)
+  ⎿  10.0.0.178
+     node      17320 hlahtun   17u  IPv6 0x8230c1392723172c      0t0  TCP *
+     :5174 (LISTEN)
+     … +2 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/vite.config.ts (+1 -0)
+       5
+       6  export default defineConfig({
+       7    plugins: [react(), tailwindcss()],
+       8 +  server: { host: true },
+       9    resolve: {
+      10      alias: { '@': fileURLToPath(new URL('./src', import.meta.ur
+          l)) },
+      11    },
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ The reader is now reachable on your network. Open http://10.0.0.178:5174 on
+  your phone, which needs to be on the same Wi-Fi as your Mac.
+
+  I added server: { host: true } to vite.config.ts. Your running bun dev picked
+  up the config change on its own, so you don't need to restart it. It now
+  listens on all interfaces, not just localhost. I checked that the LAN address
+  serves the app ("WellScreen Annotated", HTTP 200).
+
+  A few things to know:
+  - On the phone, tap a highlight to open its card. Tap anywhere else on the
+    page to close it.
+  - If the page doesn't load on the phone, macOS may be blocking incoming
+    connections for node. Allow it in System Settings → Network → Firewall, or
+    accept the prompt if one appears.
+  - The setting exposes the dev server to anyone on the same network. That's
+    fine at home, but on shared Wi-Fi like campus you may want to turn it off.
+  - Something else is also running on 5173, bound to localhost only. It's a
+    different process, not this app, so I left it alone.
+
+✻ Worked for 22s · done 7:33 PM
+
+❯ [Image #1] note is way too big compared to the page on mobile view right now
+  ⎿  [Image #1]
+
+❯ we can first ocmmit actually
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ User answered Claude's questions:
+  ⎿  · On phones the page renders at about 40% scale, so a readable card will
+     always dwarf the paper text. How should the card behave on small screens? →
+     Bottom sheet (Recommended)
+
+⏺ Going with the bottom sheet. Phones get a card docked to the bottom of the
+  screen, and desktop keeps the anchored popover.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      p='src/app/home/components/NoteCard.tsx';s=open(p).read()…)
+  ⎿  $ oxfmt
+     ✓ built in 140ms
+     $ oxlint
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+20 -10)
+      17
+      18    const onLeft = left < 0.5
+      19    const below = bottom < 0.6
+      20 -  const place: CSSProperties = {
+      21 -    ...(onLeft ? { left: `${left * 100}%` } : { right: `${(1 -
+         -right) * 100}%` }),
+      22 -    ...(below ? { top: `${bottom * 100 + 1}%` } : { bottom: `${
+         -(1 - top) * 100 + 1}%` }),
+      23 -  }
+      20 +  const place = {
+      21 +    '--l': onLeft ? `${left * 100}%` : 'auto',
+      22 +    '--r': onLeft ? 'auto' : `${(1 - right) * 100}%`,
+      23 +    '--t': below ? `${bottom * 100 + 1}%` : 'auto',
+      24 +    '--b': below ? 'auto' : `${(1 - top) * 100 + 1}%`,
+      25 +  } as CSSProperties
+      26    const origin = below
+      27      ? onLeft
+      28        ? 'origin-top-left'
+     ...
+      31        ? 'origin-bottom-left'
+      32        : 'origin-bottom-right'
+      33    const tucked = cn(
+      32 -    'opacity-0 motion-safe:scale-96',
+      33 -    below ? 'motion-safe:-translate-y-1' : 'motion-safe:transla
+         -te-y-1',
+      34 +    'opacity-0',
+      35 +    'max-sm:motion-safe:translate-y-3',
+      36 +    'sm:motion-safe:scale-96',
+      37 +    below ? 'sm:motion-safe:-translate-y-1' : 'sm:motion-safe:t
+         +ranslate-y-1',
+      38    )
+      39
+      40    return (
+      41      <aside
+      42        className={cn(
+      39 -        'pointer-events-none absolute z-10 w-[40%] min-w-64',
+      40 -        'grid gap-3 rounded-md bg-white p-3 shadow-lg',
+      43 +        'pointer-events-none z-10 grid gap-3 bg-white',
+      44          'text-sm leading-snug text-ink',
+      45 +        'max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:m
+         +ax-h-[40vh] max-sm:overflow-y-auto',
+      46 +        'max-sm:rounded-t-xl max-sm:px-4 max-sm:pt-4 max-sm:pb-
+         +[calc(1rem+env(safe-area-inset-bottom))] max-sm:shadow-[0_-4px_
+         +16px_rgb(0_0_0/0.12)]',
+      47 +        'sm:absolute sm:top-(--t) sm:right-(--r) sm:bottom-(--b
+         +) sm:left-(--l) sm:w-[40%] sm:min-w-64',
+      48 +        'sm:rounded-md sm:p-3 sm:shadow-lg',
+      49          'transition-[opacity,scale,translate] ease-out-expo',
+      50          origin,
+     … 13 more lines (ctrl+o to expand)
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; sed -i '' "s#//
+      The sheet sits inside the page on phones, so stop its taps from reaching
+      the page's note…)  ⎿  ✓ built in 127ms
+     mobile open {'pos': 'fixed', 'op': '1', 'pe': 'auto', 'l': 0, 'r': 390
+     , 't': 568, 'b': 844, 'notes': ['1. Central idea', '3. Definitions']}
+     … +5 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+1 -1)
+      53          'starting:opacity-0 max-sm:motion-safe:starting:transla
+          te-y-3 sm:motion-safe:starting:scale-96',
+      54        )}
+      55        style={place}
+      56 -      // The sheet sits inside the page on phones, so stop its
+         -taps from reaching the page's note picker.
+      56 +      // The card lives inside the page element, so stop its ta
+         +ps from re-running the page's note picker.
+      57        onPointerDown={(e) => e.stopPropagation()}
+      58        onPointerMove={(e) => e.stopPropagation()}
+      59      >
+  ⎿  (timeout 2m)
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ On phones, the note card is now a bottom sheet. Your phone should already show
+  the change, since the dev server reloads on its own. Desktop still uses the
+  popover anchored to the passage.
+
+  What the phone gets
+
+  - The sheet is fixed to the bottom of the screen at full width, with rounded
+    top corners and a soft upward shadow.
+  - It's capped at 40% of the screen height and scrolls inside itself when the
+    notes run longer.
+  - Its bottom padding includes the phone's safe-area inset, so the text clears
+    the home indicator.
+  - It slides up 12 px while fading in, and slides back down on close. With
+    reduced motion turned on, it only fades.
+  - Tapping inside the sheet no longer closes it or swaps the note. This matters
+    because the sheet sits over other highlights. Tapping anywhere else on the
+    page closes it.
+
+  Checked at 390×844 with touch
+
+  - Tapping the page-1 abstract opened the sheet showing notes 1 and 3, filling
+    the bottom 276 px (the 40% cap), with no sideways scroll.
+  - Tapping inside the sheet kept it open.
+  - Tapping elsewhere on the page closed it and turned its pointer events off.
+    The hidden sheet can't swallow taps on the page underneath.
+  - The desktop popover still opens next to note 2, as before.
+
+  Worth checking on your phone
+
+  - Safari's toolbar. iOS Safari's floating address bar may cover the bottom of
+    the sheet. I can only emulate the safe-area inset, not the real toolbar.
+  - Covered passages. A passage in the bottom 40% of the screen ends up under
+    the sheet. If that bugs you, the page could scroll the passage up above the
+    sheet when it opens.
+
+  Build, lint and format are clean. The sheet change isn't committed yet. The
+  last commit is 3f43938.
+
+✻ Churned for 1m 45s · done 7:36 PM
+
+❯ /export
+  ⎿  Conversation exported to: /Users/hlahtun/Documents/UMD/courses/chi/reader-a
+     pp/2026-09-29-193830-this-session-is-being-continued-from-a-previous-c.txt
+
+❯ okay better. and make it so that i can't have two things clicked on two
+  different pages
+
+⏺ Each page keeps its own selection right now, so on a phone a card on page 1
+  stays open when you tap on page 2. I'll move the selection up to Home so only
+  one page can hold it at a time.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ Bash(set -e; cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app
+      printf "export { cn } from 'cn'\n\nexport const sameList = (a: number[],
+      b: number[]) => a.join()…)
+  ⎿  $ oxfmt
+     ✓ built in 136ms
+     $ oxlint
+     … +3 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/Home.tsx (+22 -1)
+       1 +import { useState } from 'react'
+       2  import { paper } from '@/data/paper'
+       3 +import { sameList } from '@/lib/utils'
+       4  import { Sheet } from '@/app/home/components/Sheet'
+       5
+       6 +type Selection = { page: number; notes: number[] }
+       7 +
+       8 +const none: number[] = []
+       9 +
+      10  export default function Home() {
+      11 +  const [active, setActive] = useState<Selection | null>(null)
+      12 +
+      13 +  const pick = (page: number, notes: number[]) =>
+      14 +    setActive((prev) => {
+      15 +      if (notes.length === 0) return prev?.page === page ? null
+         + : prev
+      16 +      return prev?.page === page && sameList(prev.notes, notes)
+         + ? prev : { page, notes }
+      17 +    })
+      18 +
+      19    return (
+      20      <main className="grid justify-items-center gap-8 py-8">
+      21        {Array.from({ length: paper.pages }, (_, i) => i + 1).map
+          ((p) => (
+       8 -        <Sheet key={p} page={p} notes={paper.notes.filter((n) =
+         -> n.page === p)} cats={paper.cats} />
+      22 +        <Sheet
+      23 +          key={p}
+      24 +          page={p}
+      25 +          notes={paper.notes.filter((n) => n.page === p)}
+      26 +          cats={paper.cats}
+      27 +          active={active?.page === p ? active.notes : none}
+      28 +          onPick={(notes) => pick(p, notes)}
+      29 +        />
+      30        ))}
+      31      </main>
+      32    )
+  ⎿  Updated reader-app/src/app/home/components/Sheet.tsx (+7 -9)
+      1  import { useState } from 'react'
+      2  import type { PointerEvent } from 'react'
+      3  import type { Note } from '@/lib/types'
+      4 -import { cn } from '@/lib/utils'
+      4 +import { cn, sameList } from '@/lib/utils'
+      5  import { NoteCard } from '@/app/home/components/NoteCard'
+      6  import { NoteHighlight } from '@/app/home/components/NoteHighlig
+         ht'
+      7
+     ...
+       9    page: number
+      10    notes: Note[]
+      11    cats: Record<string, string>
+      12 +  active: number[]
+      13 +  onPick: (notes: number[]) => void
+      14  }
+      15
+      14 -const same = (a: number[], b: number[]) => a.join() === b.join(
+         -)
+      15 -
+      16 -export function Sheet({ page, notes, cats }: SheetProps) {
+      17 -  const [active, setActive] = useState<number[]>([])
+      16 +export function Sheet({ page, notes, cats, active, onPick }: Sh
+         +eetProps) {
+      17    // The card keeps the last notes it showed so it can fade out
+           with its content still in it.
+      18    const [shown, setShown] = useState<number[]>([])
+      19 +  if (active.length > 0 && !sameList(active, shown)) setShown(a
+         +ctive)
+      20    const src = `pages/p${String(page).padStart(2, '0')}.jpg`
+      21    const on = active.length > 0
+      22
+     ...
+      26      for (const el of document.elementsFromPoint(e.clientX, e.cl
+          ientY)) {
+      27        if (el instanceof HTMLElement && el.dataset.note && sheet
+          .contains(el)) hits.add(Number(el.dataset.note))
+      28      }
+      29 -    const next = notes.filter((n) => hits.has(n.n)).map((n) =>
+         -n.n)
+      30 -    setActive((prev) => (same(prev, next) ? prev : next))
+      31 -    if (next.length > 0) setShown((prev) => (same(prev, next) ?
+         - prev : next))
+      29 +    onPick(notes.filter((n) => hits.has(n.n)).map((n) => n.n))
+      30    }
+      31
+      32    return (
+     ...
+      36        onPointerMove={pick}
+      37        onPointerDown={pick}
+      38        // Touch fires pointerleave right after every tap, so kee
+          p the card open until the next tap.
+      41 -      onPointerLeave={(e) => e.pointerType !== 'touch' && setAc
+         -tive([])}
+     … 4 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/lib/utils.ts (+2 -0)
+      1  export { cn } from 'cn'
+      2 +
+      3 +export const sameList = (a: number[], b: number[]) => a.join() =
+        +== b.join()
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Only one page can hold an open note now. Tapping a note on another page closes
+  the first one: its card fades out and its blur clears while the new page
+  opens.
+
+  What changed
+
+  The selection moved up from each Sheet into Home. Home now holds a single {
+  page, notes }, or nothing when no note is open. Each Sheet gets two new props:
+  - active: the open notes if the selection is on that page, otherwise an empty
+    list.
+  - onPick: called when a tap or hover finds notes, or finds none.
+
+  Clearing has a guard: an empty pick from a page only clears the selection if
+  that page owns it. Leaving page 1 can never close a note that page 3 just
+  opened.
+
+  Sheet still keeps shown, the last notes its card displayed, so a closing card
+  fades out with its text intact. shown now syncs from the active prop during
+  render. I also moved the list comparison into lib/utils.ts as sameList, since
+  Home and Sheet both use it.
+
+  Checked
+
+  - Phone: tapped a note on page 1, then one on page 3. Only page 3's card was
+    open, and page 1's card was at opacity 0 with its blur gone.
+  - Desktop: hovering still opens and leaving still closes, as before.
+
+  Build, lint and format are clean. The bottom sheet and this change are both
+  uncommitted. The last commit is still 3f43938.
+
+✻ Brewed for 1m 4s · done 7:40 PM
+
+❯ alright on the mobile, how do i tackle the problem of the paper being small?
+
+⏺ The best fix is to show one column of the paper at a time on phones. Each page
+  gets split into its left and right columns, and each column is stacked at
+  full screen width. That makes the text about 2.3× bigger without
+  pinch-zooming, and reading still runs top to bottom.
+
+  Why it's small
+
+  The paper is a two-column page 816 px wide. A phone gives it about 358 px, so
+  everything shrinks to 44%, and body text ends up around 5 px. You can't fix
+  that by scaling the whole page, because a full page never fits a phone width
+  at a readable size. A single column is 39% of the page width, so it can fill
+  the screen at about 12 px text.
+
+  Options
+
+  - Column reflow (recommended). On phones, render each page as strips: page 1's
+    title and author block as one full-width strip, then the left column, then
+    the right column. Rects map cleanly because they're already page fractions.
+    A rect in the left column is just re-scaled to that column's box, so
+    highlights, hover, spotlight and the bottom sheet all keep working. This is
+    how most phone PDF readers handle two-column papers.
+  - Zoom to the passage on tap. When a note opens, scale the page so its passage
+    fills the width above the bottom sheet. This helps read what you tapped,
+    but the rest of the paper stays tiny. It could be added on top of reflow
+    later.
+  - Pinch-zoom only. It's free, since the browser already allows it. But fixed
+    elements like the bottom sheet act strangely while zoomed, and you're
+    panning around constantly. It works as a fallback, not a design.
+  - Real text reflow. Extract the paper's text and render it as HTML. It's the
+    most readable, but you lose the paper's look, and every highlight would need
+    re-anchoring to text offsets. The assignment asks for the manuscript
+    itself, so I'd skip this.
+
+  How I'd build the reflow
+
+  The splitting should happen at build time in build_part3.py, not in React:
+  - PyMuPDF already knows each text block's position. Blocks wider than about
+    60% of the page become full-width strips: titles, author blocks, and the
+    wide figures and tables. The rest split into left and right columns.
+  - The script writes a strips list per page into paper.json: each strip's box
+    on the page, plus its image.
+  - On phones, Sheet renders strips instead of the whole page. Each note rect
+    converts into its strip's coordinates. On desktop, nothing changes.
+
+  One catch: the page images are 1224 px wide. That's enough for a whole page on
+  a phone, but a column blown up to screen width on a 3× phone screen needs
+  about 2.5× more pixels, or the text looks soft. The build would render the
+  column strips at a higher resolution. Those extra images only load on phones,
+  so desktop pays nothing.
+
+  Say the word and I'll start on the build-script side, since everything else
+  depends on the strip data.
+
+✻ Worked for 36s · done 7:41 PM
+
+❯ okay let's see the column reflow in action now
+
+⏺ Column reflow touches both the build script and the React side. I'll start by
+  studying the paper's geometry so the strip detection is grounded in the actual
+  layout.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Confirmed the standard ACM two-column layout (columns from x=53.5 to 559.7pt,
+  gutter at 306.6), with full-width content appearing on pages 1, 5, 6, 9, 10,
+  11, and 14. Now I'll add strip detection to the build.
+
+  Read 3 files, ran 5 shell commands (ctrl+o to expand)
+  ⎿  Read ../../../../.claude/projects/-Users-hlahtun-Documents-UMD/memory/react
+     -app-structure.md (16 lines)
+  ⎿  Skills restored (animate, artifact-capabilities,
+     figma:figma-create-new-file, figma:figma-use, artifact-design)
+
+⏺ Strips are rendering; I'm fixing table captions that get cut at the gutter
+  because single words never cross it. Switching detection from words to full
+  text lines.
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+⏺ Strip boxes look right on every page. Now the front end.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; mkdir -p
+      src/hooks
+      cat > src/hooks/useMediaQuery.ts <<'EOF'…)
+  ⎿  $ cp ../part3-reader/data.json src/data/paper.json && rm -rf public/pa
+     ges && cp -R ../part3-reader/pages public/pages && rm -rf public/strip
+     s && cp -R ../part3-reader/strips public/strips
+     … +7 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/package.json (+1 -1)
+       4    "private": true,
+       5    "type": "module",
+       6    "scripts": {
+       7 -    "sync": "cp ../part3-reader/data.json src/data/paper.json &
+         -& rm -rf public/pages && cp -R ../part3-reader/pages public/pag
+         -es",
+       7 +    "sync": "cp ../part3-reader/data.json src/data/paper.json &
+         +& rm -rf public/pages && cp -R ../part3-reader/pages public/pag
+         +es && rm -rf public/strips && cp -R ../part3-reader/strips publ
+         +ic/strips",
+       8      "dev": "vite",
+       9      "build": "tsc -b && vite build",
+      10      "lint": "oxlint",
+  ⎿  Updated reader-app/src/app/home/Home.tsx (+11 -8)
+      19    return (
+      20      <main className="grid justify-items-center gap-8 py-8">
+      21        {Array.from({ length: paper.pages }, (_, i) => i + 1).map
+          ((p) => (
+      22 -        <><Sheet
+      23 -          key={p}
+      24 -          page={p}
+      25 -          notes={paper.notes.filter((n) => n.page === p)}
+      26 -          cats={paper.cats}
+      27 -          active={active?.page === p ? active.notes : none}
+      28 -          onPick={(notes) => pick(p, notes)}
+      29 -        /></>
+      22 +        <>
+      23 +          <Sheet
+      24 +            key={p}
+      25 +            page={p}
+      26 +            notes={paper.notes.filter((n) => n.page === p)}
+      27 +            strips={paper.strips.filter((s) => s.page === p)}
+      28 +            cats={paper.cats}
+      29 +            active={active?.page === p ? active.notes : none}
+      30 +            onPick={(notes) => pick(p, notes)}
+      31 +          />
+      32 +        </>
+      33        ))}
+      34      </main>
+      35    )
+  ⎿  Updated reader-app/src/app/home/components/NoteHighlight.tsx (+4 -3)
+       1  import type { CSSProperties } from 'react'
+       2 -import type { Note } from '@/lib/types'
+       2 +import type { Note, Rect } from '@/lib/types'
+       3  import { cn } from '@/lib/utils'
+       4
+       5  export type HighlightState = 'idle' | 'lit' | 'dim'
+       6
+       7  type NoteHighlightProps = {
+       8    note: Note
+       9 +  rects: Rect[]
+      10    src: string
+      11    state: HighlightState
+      12  }
+      13
+      13 -export function NoteHighlight({ note, src, state }: NoteHighlig
+         -htProps) {
+      14 -  return note.rects.map(([x, y, w, h], i) => {
+      14 +export function NoteHighlight({ note, rects, src, state }: Note
+         +HighlightProps) {
+      15 +  return rects.map(([x, y, w, h], i) => {
+      16      const hh = h * 1.2
+      17      return (
+      18        <div
+  ⎿  Updated reader-app/src/app/home/components/Sheet.tsx (+48 -20)
+       1  import { useState } from 'react'
+       2  import type { PointerEvent } from 'react'
+       3 -import type { Note } from '@/lib/types'
+       3 +import { paper } from '@/data/paper'
+       4 +import type { Note, Rect, Strip } from '@/lib/types'
+       5  import { cn, sameList } from '@/lib/utils'
+       6 +import { useMediaQuery } from '@/hooks/useMediaQuery'
+       7  import { NoteCard } from '@/app/home/components/NoteCard'
+       8  import { NoteHighlight } from '@/app/home/components/NoteHighli
+          ght'
+       9
+      10  type SheetProps = {
+      11    page: number
+      12    notes: Note[]
+      13 +  strips: Strip[]
+      14    cats: Record<string, string>
+      15    active: number[]
+      16    onPick: (notes: number[]) => void
+      17  }
+      18
+      16 -export function Sheet({ page, notes, cats, active, onPick }: Sh
+         -eetProps) {
+      19 +const inside = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect) =>
+         +{
+      20 +  const cx = x + w / 2
+      21 +  const cy = y + h / 2
+      22 +  return cx >= sx && cx <= sx + sw && cy >= sy && cy <= sy + sh
+      23 +}
+      24 +
+      25 +const toFrame = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect): R
+         +ect => [(x - sx) / sw, (y - sy) / sh, w / sw, h / sh]
+      26 +
+      27 +export function Sheet({ page, notes, strips, cats, active, onPi
+         +ck }: SheetProps) {
+      28    // The card keeps the last notes it showed so it can fade out
+           with its content still in it.
+      29    const [shown, setShown] = useState<number[]>([])
+      30    if (active.length > 0 && !sameList(active, shown)) setShown(a
+          ctive)
+      20 -  const src = `pages/p${String(page).padStart(2, '0')}.jpg`
+      31 +  const phone = useMediaQuery('(max-width: 639px)')
+      32    const on = active.length > 0
+      33
+      34 +  // Phones get the page cut into column strips, so the text re
+         +ads at screen width instead of half of it.
+      35 +  const frames: Strip[] = phone
+      36 +    ? strips
+      37 +    : [{ page, box: [0, 0, 1, 1], src: `pages/p${String(page).p
+         +adStart(2, '0')}.jpg` }]
+     … 68 more lines (ctrl+o to expand)
+  ⎿  Created reader-app/src/hooks/useMediaQuery.ts (+12 -0)
+       1 +import { useSyncExternalStore } from 'react'
+       2 +
+       3 +export function useMediaQuery(query: string) {
+       4 +  return useSyncExternalStore(
+       5 +    (onChange) => {
+       6 +      const list = matchMedia(query)
+       7 +      list.addEventListener('change', onChange)
+       8 +      return () => list.removeEventListener('change', onChange)
+       9 +    },
+      10 +    () => matchMedia(query).matches,
+      11 +  )
+      12 +}
+  ⎿  … 68 more files changed
+
+  Read 2 files, ran 2 shell commands (ctrl+o to expand)
+
+⏺ Column reflow works in both views. Checking one leftover in Home.tsx, then
+  I'll report.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Needs you
+
+  - Home.tsx has a keyless fragment. Home.tsx:22 wraps each <Sheet> in <>…</>,
+    but key={p} sits on the Sheet inside it. React will warn about missing keys
+    in dev. You can drop the fragment or move the key onto it. I left the line
+    alone because it looked like your edit in progress.
+  - Nothing is committed yet. That covers the reflow plus the earlier
+    bottom-sheet and single-selection work. Tell me when to commit.
+
+  Column reflow
+
+  Column reflow works. On screens narrower than 640px, each page now renders as
+  stacked strips: the full-width parts first, then the left column, then the
+  right column. Body text on a 390px phone now reads at roughly the size of a
+  printed paper. Desktop still renders the whole page as one image, and the
+  phone never downloads the strip images.
+
+  I checked both views in headless Playwright. On desktop, hovering a note gives
+  the same card and blur as before. On the phone, tapping the Haidt note lit
+  its highlight in the correct strip, blurred the rest and opened the bottom
+  sheet. Neither view logged console errors.
+
+  To try it on your phone, open http://10.0.0.178:5174. If the dev server
+  doesn't pick up the new public/strips/ folder, restart bun dev.
+
+  Screenshots:
+  - scratchpad/reflow-phone-on.png
+  - scratchpad/reflow-desk-on.png
+
+  How the strips are cut
+
+  build_part3.py now cuts each page into strips and writes them to
+  part3-reader/strips/. There are 66 strips, about 21 MB in total, each 1200px
+  wide.
+
+  - Full-width strips. Any text line, image or drawing that crosses the gutter
+    between the two columns marks a full-width strip.
+  - Tables. Tables only cross the gutter at their horizontal rules. A 100pt
+    merge gap keeps each table and its caption together in one full-width strip.
+  - Checked visually. I drew the strip boxes over pages 1, 6, 9 and 10, and the
+    boxes are clean.
+  - One trade-off. On page 1, the second row of authors (Yoo and Saha) splits
+    into the left and right column strips. It still reads fine.
+
+  Front-end changes
+
+  - Sheet.tsx. On a phone, Sheet renders one frame per strip. On desktop it
+    renders a single frame covering the whole page. Each highlight rect goes to
+    the strip that contains its center, and its coordinates are converted to
+    that strip's position.
+  - NoteHighlight.tsx. It now takes the converted rects as a prop. Your h * 1.2
+    height is unchanged.
+  - New useMediaQuery hook. It lives in src/hooks/.
+  - sync script. It now also copies the strips into public/strips.
+✻ Baked for 7m 37s · done 7:49 PM
+
+❯ alirght neat. we can commit this. also, we can disale zooming
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ Committed as 39e394f. Now disabling zoom.
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      def edit(p,a,b):…)
+  ⎿  $ oxfmt
+      index.html   | 4 ++--
+      src/main.tsx | 3 +++
+     … +7 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/index.html (+2 -2)
+       3    <head>
+       4      <meta charset="UTF-8" />
+       5      <link rel="icon" type="image/svg+xml" href="/favicon.svg" /
+          >
+       6 -    <meta name="viewport" content="width=device-width, initial-
+         -scale=1.0" />
+       6 +    <meta name="viewport" content="width=device-width, initial-
+         +scale=1, maximum-scale=1, user-scalable=no" />
+       7      <title>WellScreen Annotated</title>
+       8    </head>
+       9 -  <body class="bg-ground px-4 font-sans text-ink">
+       9 +  <body class="touch-manipulation bg-ground px-4 font-sans text
+         +-ink">
+      10      <div id="root"></div>
+      11      <script type="module" src="/src/main.tsx"></script>
+      12    </body>
+  ⎿  Updated reader-app/src/main.tsx (+3 -0)
+       3  import '@/app/globals.css'
+       4  import App from '@/app/App'
+       5
+       6 +// iOS Safari ignores user-scalable=no, so block its pinch gest
+         +ure directly.
+       7 +document.addEventListener('gesturestart', (e) => e.preventDefau
+         +lt())
+       8 +
+       9  createRoot(document.getElementById('root')!).render(
+      10    <StrictMode>
+      11      <App />
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ Needs you
+
+  - Home.tsx:22 still has the keyless fragment. It went into the commit as is,
+    so React will warn about missing keys in dev.
+
+  Commits
+
+  I made two commits in reader-app:
+  - 39e394f feat: reader-app; added mobile column reflow with strip images,
+    bottom-sheet note card and one active note across pages
+  - 3e5665e feat: reader-app; disabled pinch and double-tap zoom
+
+  The 66 strip images in public/strips went into 39e394f, the same way the page
+  JPGs are already tracked.
+
+  Zoom
+
+  The zoom change has three parts:
+  - Viewport tag. The viewport meta tag now sets maximum-scale=1,
+    user-scalable=no.
+  - Double-tap zoom. The <body> element gets touch-manipulation, which turns off
+    double-tap zoom.
+  - Pinch zoom on iOS. iOS Safari ignores user-scalable=no, so main.tsx blocks
+    the gesturestart event to stop pinch zoom there.
+
+  The build and lint pass, but I haven't tested zoom on a real phone. Reload
+  http://10.0.0.178:5174 on your phone to check that pinch zoom is gone.
+
+
+✻ Crunched for 51s · done 7:51 PM
+
+❯ alright now i want to add a clicked state. this state is exactly similar to
+  hover state but in this state, there'll be navigation options to go between
+  next and prev notes. it will not loop around meaning, clickign prev on the
+  first note will not go to the last note, it'll stay on the first note
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; cat >
+      src/app/home/selection.ts <<'EOF'
+      import { paper } from '@/data/paper'…)
+  ⎿  $ oxfmt
+     ✓ built in 214ms
+     $ oxlint
+  ⎿  Updated reader-app/src/app/home/Home.tsx (+43 -12)
+       1 -import { useState } from 'react'
+       1 +import { Fragment, useEffect, useRef, useState } from 'react'
+       2  import { paper } from '@/data/paper'
+       3  import { sameList } from '@/lib/utils'
+       4  import { Sheet } from '@/app/home/components/Sheet'
+       5 -
+       6 -type Selection = { page: number; notes: number[] }
+       7 -
+       8 -const none: number[] = []
+       5 +import { stopIndex, stops } from '@/app/home/selection'
+       6 +import type { Selection } from '@/app/home/selection'
+       7
+       8  export default function Home() {
+       9    const [active, setActive] = useState<Selection | null>(null)
+      10 +  const target = useRef<number | null>(null)
+      11
+      13 -  const pick = (page: number, notes: number[]) =>
+      12 +  const hover = (page: number, notes: number[]) =>
+      13      setActive((prev) => {
+      14 +      if (prev?.pinned) return prev
+      15        if (notes.length === 0) return prev?.page === page ? null
+           : prev
+      16 -      return prev?.page === page && sameList(prev.notes, notes)
+         - ? prev : { page, notes }
+      16 +      return prev?.page === page && sameList(prev.notes, notes)
+         + ? prev : { page, notes, pinned: false }
+      17      })
+      18
+      19 +  const pick = (page: number, notes: number[]) =>
+      20 +    setActive((prev) => {
+      21 +      if (notes.length === 0) return null
+      22 +      return prev?.pinned && prev.page === page && sameList(pre
+         +v.notes, notes) ? prev : { page, notes, pinned: true }
+      23 +    })
+      24 +
+      25 +  const step = (dir: 1 | -1) => {
+      26 +    if (!active) return
+      27 +    const next = stops[stopIndex(active.notes) + dir]
+      28 +    if (!next) return
+      29 +    target.current = next.notes[0]
+      30 +    setActive({ ...next, pinned: true })
+      31 +  }
+      32 +
+      33 +  useEffect(() => {
+     … 38 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+33 -4)
+      1 -import type { CSSProperties } from 'react'
+      1 +import type { ComponentProps, CSSProperties } from 'react'
+      2  import type { Note } from '@/lib/types'
+      3  import { cn } from '@/lib/utils'
+      4
+     ...
+       6    notes: Note[]
+       7    cats: Record<string, string>
+       8    open: boolean
+       9 +  nav?: { at: number; total: number; onStep: (dir: 1 | -1) => v
+         +oid }
+      10  }
+      11
+      11 -export function NoteCard({ notes, cats, open }: NoteCardProps)
+         -{
+      12 +export function NoteCard({ notes, cats, open, nav }: NoteCardPr
+         +ops) {
+      13    const rects = notes.flatMap((n) => n.rects)
+      14    const left = Math.min(...rects.map(([x]) => x))
+      15    const right = Math.max(...rects.map(([x, , w]) => x + w))
+     ...
+      51          origin,
+      52          open ? 'duration-200' : 'duration-120',
+      53          open ? 'opacity-100 max-sm:pointer-events-auto' : tucke
+          d,
+      54 +        open && nav && 'pointer-events-auto',
+      55          'starting:opacity-0 max-sm:motion-safe:starting:transla
+          te-y-3 sm:motion-safe:starting:scale-96',
+      56        )}
+      57        style={place}
+      56 -      // The card lives inside the page element, so stop its ta
+         -ps from re-running the page's note picker.
+      57 -      onPointerDown={(e) => e.stopPropagation()}
+      58 +      // The card lives inside the page element, so stop its cl
+         +icks from re-running the page's note picker.
+      59 +      onClick={(e) => e.stopPropagation()}
+      60        onPointerMove={(e) => e.stopPropagation()}
+      61      >
+      62        {notes.map((note) => (
+     ...
+       71            <p>{note.text}</p>
+       72          </div>
+       73        ))}
+       74 +      {nav && (
+       75 +        <nav className={cn('flex items-center justify-between
+          +gap-2', 'border-t border-ink/10 pt-2', 'text-xs')}>
+       76 +          <StepButton disabled={nav.at === 1} onClick={() => n
+          +av.onStep(-1)}>
+       77 +            Prev
+       78 +          </StepButton>
+       79 +          <span className="text-ink/60 tabular-nums">
+       80 +            {nav.at} of {nav.total}
+     … 23 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/Sheet.tsx (+28 -14)
+       1  import { useState } from 'react'
+       2 -import type { PointerEvent } from 'react'
+       2 +import type { MouseEvent } from 'react'
+       3  import { paper } from '@/data/paper'
+       4  import type { Note, Rect, Strip } from '@/lib/types'
+       5 -import { cn, sameList } from '@/lib/utils'
+       5 +import { cn } from '@/lib/utils'
+       6  import { useMediaQuery } from '@/hooks/useMediaQuery'
+       7  import { NoteCard } from '@/app/home/components/NoteCard'
+       8  import { NoteHighlight } from '@/app/home/components/NoteHighli
+          ght'
+       9 +import { stopIndex, stops } from '@/app/home/selection'
+      10 +import type { Selection } from '@/app/home/selection'
+      11
+      12  type SheetProps = {
+      13    page: number
+      14    notes: Note[]
+      15    strips: Strip[]
+      16    cats: Record<string, string>
+      15 -  active: number[]
+      17 +  selection: Selection | null
+      18 +  onHover: (notes: number[]) => void
+      19    onPick: (notes: number[]) => void
+      20 +  onStep: (dir: 1 | -1) => void
+      21  }
+      22
+      23 +const none: number[] = []
+      24 +
+      25  const inside = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect) =>
+          {
+      26    const cx = x + w / 2
+      27    const cy = y + h / 2
+     ...
+      30
+      31  const toFrame = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect): R
+          ect => [(x - sx) / sw, (y - sy) / sh, w / sw, h / sh]
+      32
+      27 -export function Sheet({ page, notes, strips, cats, active, onPi
+         -ck }: SheetProps) {
+      28 -  // The card keeps the last notes it showed so it can fade out
+         - with its content still in it.
+      29 -  const [shown, setShown] = useState<number[]>([])
+      30 -  if (active.length > 0 && !sameList(active, shown)) setShown(a
+         -ctive)
+      33 +export function Sheet({ page, notes, strips, cats, selection, o
+         +nHover, onPick, onStep }: SheetProps) {
+      34 +  // The card keeps the last selection it showed so it can fade
+         + out with its content still in it.
+      35 +  const [shown, setShown] = useState<Selection | null>(null)
+     … 49 more lines (ctrl+o to expand)
+  ⎿  Created reader-app/src/app/home/selection.ts (+19 -0)
+       1 +import { paper } from '@/data/paper'
+       2 +
+       3 +export type Selection = { page: number; notes: number[]; pinned
+         +: boolean }
+       4 +
+       5 +// Notes that share a highlight open together, so stepping move
+         +s group by group.
+       6 +const groups = new Map<string, { page: number; notes: number[]
+         +}>()
+       7 +for (const note of paper.notes) {
+       8 +  const key = `${note.page}:${JSON.stringify(note.rects)}`
+       9 +  const group = groups.get(key) ?? { page: note.page, notes: []
+         + }
+      10 +  group.notes.push(note.n)
+      11 +  groups.set(key, group)
+      12 +}
+      13 +
+      14 +export const stops = [...groups.values()].sort((a, b) => a.note
+         +s[0] - b.notes[0])
+      15 +
+      16 +export const stopIndex = (notes: number[]) => {
+      17 +  const first = Math.min(...notes)
+      18 +  return stops.findIndex((s) => s.notes.includes(first))
+      19 +}
+
+⏺ Build and lint pass. Testing click, prev/next and the edges in Playwright.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Two cards were in the DOM: the page you step away from keeps its faded card
+  mounted, and its buttons were still reachable by keyboard. I'm marking closed
+  cards inert and rerunning.
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app;
+      S=/private/tmp/claude-501/-Users-hlahtun-Documents-UMD/42a8bf5a-816e-4808-
+      833c-4d4cb3a01d7a/scratchpad;…)
+  ⎿  $ oxfmt
+     ✓ built in 231ms
+     desk hover {'lit': [2], 'counter': None, 'prevOff': None, 'nextOff': N
+     … +20 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+1 -0)
+      55          'starting:opacity-0 max-sm:motion-safe:starting:transla
+          te-y-3 sm:motion-safe:starting:scale-96',
+      56        )}
+      57        style={place}
+      58 +      inert={!open}
+      59        // The card lives inside the page element, so stop its cl
+          icks from re-running the page's note picker.
+      60        onClick={(e) => e.stopPropagation()}
+      61        onPointerMove={(e) => e.stopPropagation()}
+  ⎿  (timeout 5m)
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ On desktop, stepping onto a new page scrolled the passage into view but left
+  the card, and its Prev/Next buttons, below the fold. I'm changing the scroll
+  so it fits the passage and the card together.
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app;
+      S=/private/tmp/claude-501/-Users-hlahtun-Documents-UMD/42a8bf5a-816e-4808-
+      833c-4d4cb3a01d7a/scratchpad;…)
+  ⎿  $ oxfmt
+     ✓ built in 236ms
+     desk {'lit': '6', 'card': [171, 375], 'hl': [90, 104], 'vh': 900}
+     phone {'lit': '6', 'card': [624, 844], 'hl': [84, 99], 'vh': 844}
+  ⎿  Updated reader-app/src/app/home/Home.tsx (+9 -4)
+      35      target.current = null
+      36      const el = n && document.querySelector(`[data-note="${n}"]`
+          )
+      37      if (!el) return
+      38 -    const r = el.getBoundingClientRect()
+      38 +    const phone = matchMedia('(max-width: 639px)').matches
+      39 +    const card = document.querySelector('aside:not([inert])')
+      40 +    const boxes = [el, ...(card && !phone ? [card] : [])].map((
+         +e) => e.getBoundingClientRect())
+      41 +    const top = Math.min(...boxes.map((b) => b.top))
+      42 +    const bottom = Math.max(...boxes.map((b) => b.bottom))
+      43      // The phone's bottom sheet covers the lower 40% of the scr
+          een, so a passage behind it counts as off screen.
+      40 -    const floor = innerHeight * (matchMedia('(max-width: 639px)
+         -').matches ? 0.6 : 1)
+      41 -    if (r.top >= 0 && r.bottom <= floor) return
+      44 +    const floor = innerHeight * (phone ? 0.6 : 1)
+      45 +    if (top >= 0 && bottom <= floor) return
+      46      const smooth = !matchMedia('(prefers-reduced-motion: reduce
+          )').matches
+      43 -    scrollBy({ top: r.top - innerHeight * 0.25, behavior: smoot
+         -h ? 'smooth' : 'auto' })
+      47 +    const slack = Math.max(floor - (bottom - top), 0)
+      48 +    scrollBy({ top: top - Math.min(slack / 2, innerHeight * 0.1
+         +), behavior: smooth ? 'smooth' : 'auto' })
+      49    }, [active])
+      50
+      51    return (
+  ⎿  (timeout 3m)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Needs you
+
+  - I changed your fragment in Home.tsx. It is now <Fragment key={p}>, which
+    fixes the React key warning and keeps the wrapper.
+  - The click state is not committed yet. Say the word and I'll commit it.
+
+  Click state
+
+  The click state now works on desktop and on phone. It looks exactly like the
+  hover state and adds a Prev / "5 of 49" / Next row at the bottom of the card.
+  Stepping does not loop: Prev is disabled on the first note and Next is
+  disabled on the last one.
+
+  I checked it in headless Playwright at 1440×900 and 390×844 with no console
+  errors:
+  - Click keeps the card open. On desktop, hovering still previews a note.
+    Clicking pins it, and moving the mouse away leaves the card open. On a
+    phone, every tap pins, because touch has no hover.
+  - The edges hold. Prev on the first note and Next on note 51 both stay put.
+  - Stepping crosses pages. When the next note is on another page, the view
+    scrolls so the passage and the card both fit on screen. On the phone, the
+    scroll keeps the passage above the bottom sheet. Before this fix, the
+    desktop card's buttons ended up below the fold after a page crossing.
+  - Clicking blank space closes the card. That works on the page or in the gap
+    between pages.
+
+  How stepping groups notes
+
+  Notes 1 and 3 share the same highlight, and so do notes 18 and 19. Each pair
+  counts as one stop, so there are 49 stops for 51 notes. Stepping from the pair
+  {1, 3} goes to note 2.
+
+  Code changes
+
+  - src/app/home/selection.ts (new). It holds the Selection type, which has a
+    pinned flag, plus the ordered stops.
+  - Home.tsx.
+    - Hover is ignored while a note is pinned.
+    - A click pins the notes under the pointer.
+    - step moves one stop and scrolls only when the target is off screen.
+  - Sheet.tsx.
+    - Clicking now pins. It used to be pointerdown, which also fired at the
+      start of every touch scroll.
+    - Touch pointermove no longer triggers hover.
+  - NoteCard.tsx.
+    - It gets the nav row, and a pinned card accepts clicks on desktop.
+    - Closed cards are now inert. The page you step away from keeps its faded
+      card mounted, and before this change its hidden buttons could still be
+      reached with Tab.
+
+  Screenshots: scratchpad/pin2-desk.png and scratchpad/pin2-phone.png.
+  Left/right arrow keys for stepping and Esc to close would be small additions
+  if you want them.
+
+✻ Brewed for 4m 43s · done 7:57 PM
+
+❯ we can commit this. and remove the hover state, make both the same thing. so
+  i guess in a sense the click state becomes the hover state? and the note
+  shold stay after an explicit click. and clicking next shoudl autoamticlaly
+  open the note of the next highlighted section? and now it's more than ever
+  important to make sure that the highlights are nubmered properly? like going
+  from top to bottom and left to right
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ I found that 24 of the 51 notes are numbered by ledger order rather than
+  reading order. I'll renumber them by page and strip position (full-width
+  bands, left column, right column, top to bottom), then remove the hover.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      def edit(p,a,b):…)
+  ⎿  $ oxfmt
+     ✓ built in 151ms
+     $ oxlint
+     … +52 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+13 -16)
+       6    notes: Note[]
+       7    cats: Record<string, string>
+       8    open: boolean
+       9 -  nav?: { at: number; total: number; onStep: (dir: 1 | -1) => v
+         -oid }
+       9 +  nav: { at: number; total: number; onStep: (dir: 1 | -1) => vo
+         +id }
+      10  }
+      11
+      12  export function NoteCard({ notes, cats, open, nav }: NoteCardPr
+          ops) {
+     ...
+      50          'transition-[opacity,scale,translate] ease-out-expo',
+      51          origin,
+      52          open ? 'duration-200' : 'duration-120',
+      53 -        open ? 'opacity-100 max-sm:pointer-events-auto' : tucke
+         -d,
+      54 -        open && nav && 'pointer-events-auto',
+      53 +        open ? 'pointer-events-auto opacity-100' : tucked,
+      54          'starting:opacity-0 max-sm:motion-safe:starting:transla
+          te-y-3 sm:motion-safe:starting:scale-96',
+      55        )}
+      56        style={place}
+     ...
+      71            <p>{note.text}</p>
+      72          </div>
+      73        ))}
+      75 -      {nav && (
+      76 -        <nav className={cn('flex items-center justify-between g
+         -ap-2', 'border-t border-ink/10 pt-2', 'text-xs')}>
+      77 -          <StepButton disabled={nav.at === 1} onClick={() => na
+         -v.onStep(-1)}>
+      78 -            Prev
+      79 -          </StepButton>
+      80 -          <span className="text-ink/60 tabular-nums">
+      81 -            {nav.at} of {nav.total}
+      82 -          </span>
+      83 -          <StepButton disabled={nav.at === nav.total} onClick={
+         -() => nav.onStep(1)}>
+      84 -            Next
+      85 -          </StepButton>
+      86 -        </nav>
+      87 -      )}
+      74 +      <nav className={cn('flex items-center justify-between gap
+         +-2', 'border-t border-ink/10 pt-2', 'text-xs')}>
+      75 +        <StepButton disabled={nav.at === 1} onClick={() => nav.
+         +onStep(-1)}>
+      76 +          Prev
+      77 +        </StepButton>
+      78 +        <span className="text-ink/60 tabular-nums">
+      79 +          {nav.at} of {nav.total}
+      80 +        </span>
+     … 7 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteHighlight.tsx (+1 -1)
+      18        <div
+      19          key={i}
+      20          data-note={note.n}
+      21 -        className={cn('absolute', state === 'lit' && 'z-2')}
+      21 +        className={cn('absolute cursor-pointer', state === 'lit
+         +' && 'z-2')}
+      22          style={
+      23            {
+      24              left: `${x * 100}%`,
+  ⎿  Updated reader-app/src/app/home/components/Sheet.tsx (+1 -1)
+       98            notes={notes.filter((n) => shown.notes.includes(n.n)
+           )}
+       99            cats={cats}
+      100            open={on}
+      101 -          nav={shown.pinned ? { at: stopIndex(shown.notes) + 1
+          -, total: stops.length, onStep } : undefined}
+      101 +          nav={{ at: stopIndex(shown.notes) + 1, total: stops.
+          +length, onStep }}
+      102          />
+      103        )}
+      104      </section>
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app;
+      S=/private/tmp/claude-501/-Users-hlahtun-Documents-UMD/42a8bf5a-816e-4808-
+      833c-4d4cb3a01d7a/scratchpad;…)
+  ⎿  ✓ built in 216ms
+     [(1, 1, 1, 0.46), (2, 3, 1, 0.46), (3, 4, 1, 0.56), (4, 5, 1, 0.68), (
+     5, 2, 1, 0.72), (6, 6, 2, 0.11), (7, 7, 2, 0.46), (8, 8, 2, 0.78), (9,
+     … +9 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+0 -1)
+      57        inert={!open}
+      58        // The card lives inside the page element, so stop its cl
+          icks from re-running the page's note picker.
+      59        onClick={(e) => e.stopPropagation()}
+      60 -      onPointerMove={(e) => e.stopPropagation()}
+      60      >
+      61        {notes.map((note) => (
+      62          <div
+  ⎿  (timeout 3m)
+
+⏺ Numbering and click-only behavior both check out. I'm writing up the results;
+  the new changes aren't committed yet.
+
+  Needs you
+
+  - Your ledger and the app now use different note numbers. The app numbers
+    notes in reading order. bhat-part3-ledger.md still uses the old numbers, and
+    each note keeps its old number in a new ledger field. Ledger note 2 is now
+    app note 5, for example. Tell me if you want the ledger file renumbered to
+    match.
+  - The new changes are not committed yet. The earlier work is committed as
+    74ac5ac. I'll commit the rest when you say so.
+
+  Click only
+
+  Hover is gone. The card opens only on click, and it stays open until you click
+  blank space on a page or in the gap between pages. Clicking Next or Prev
+  opens the next or previous highlight's note directly. Highlights now show a
+  pointer cursor, so they still read as clickable. On the phone, a tap already
+  did this, so nothing changes there.
+
+  I checked it in headless Playwright at 1440×900 with no console errors:
+  - Hover does nothing. Hovering a highlight opens no card.
+  - Click opens and pins. Clicking opened the card, and moving the mouse away
+    left it open.
+  - Next follows the new order. Eight Next clicks walked notes 3 to 10 in order.
+  - Blank click closes. Clicking blank space closed the card.
+
+  Numbering
+
+  The ledger numbers followed the order you wrote the notes, so 24 of the 51
+  were out of reading order. build_part3.py now renumbers the notes by page.
+  Within a page, it follows the strip order from the reflow: full-width bands
+  first, then the left column, then the right column. Within a strip, it goes
+  top to bottom. So a two-column page reads down the left column before the
+  right one, the same as reading the paper.
+
+  On page 1, for example:
+  - The abstract notes are now 1 to 4.
+  - The Introduction note, formerly note 2, is now 5.
+  - On page 2, the old notes 10 and 11 swapped places.
+
+  The claude.ai artifact version built from the same data picks up the new
+  numbers too.
+
+  One old issue is still there. Notes 1 and 2 (ledger 1 and 3) still share the
+  same highlight on page 1, so they open together as one stop, and the counter
+  shows 49 stops for 51 notes.
+
+✻ Crunched for 2m 5s · done 8:03 PM
+
+❯ [Image #2] see the prev and next button are clipped off on mobile?
+
+  also we can commit after this. and next is to add keyboard navigations and
+  screen reader helpfulness, accesssibilty
+  ⎿  [Image #2]
+⏺ The sheet sits under Safari's floating toolbar. The sheet pins to the very
+  bottom of the screen, and env(safe-area-inset-bottom) reads 0 because the
+  viewport tag lacks viewport-fit=cover. I'm moving Prev/Next to the top of the
+  sheet and making that row sticky, so the toolbar can't cover it. I'm also
+  adding extra bottom padding so the last lines of a note can scroll clear of
+  the toolbar.
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      def edit(p,a,b):…)
+  ⎿  $ oxfmt
+     ✓ built in 230ms
+     47:        // iOS Safari floats its toolbar over the page bottom, so t
+     he padding leaves room to scroll the last line above it.
+  ⎿  Updated reader-app/index.html (+4 -1)
+       3    <head>
+       4      <meta charset="UTF-8" />
+       5      <link rel="icon" type="image/svg+xml" href="/favicon.svg" /
+          >
+       6 -    <meta name="viewport" content="width=device-width, initial-
+         -scale=1, maximum-scale=1, user-scalable=no" />
+       6 +    <meta
+       7 +      name="viewport"
+       8 +      content="width=device-width, initial-scale=1, maximum-sca
+         +le=1, user-scalable=no, viewport-fit=cover"
+       9 +    />
+      10      <title>WellScreen Annotated</title>
+      11    </head>
+      12    <body class="touch-manipulation bg-ground px-4 font-sans text
+          -ink">
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+10 -2)
+      44          'pointer-events-none z-10 grid gap-3 bg-white',
+      45          'text-sm leading-snug text-ink',
+      46          'max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:m
+          ax-h-[40vh] max-sm:overflow-y-auto',
+      47 -        'max-sm:rounded-t-xl max-sm:px-4 max-sm:pt-4 max-sm:pb-
+         -[calc(1rem+env(safe-area-inset-bottom))] max-sm:shadow-[0_-4px_
+         -16px_rgb(0_0_0/0.12)]',
+      47 +        // iOS Safari floats its toolbar over the page bottom,
+         +so the padding leaves room to scroll the last line above it.
+      48 +        'max-sm:rounded-t-xl max-sm:px-4 max-sm:pb-[calc(5rem+e
+         +nv(safe-area-inset-bottom))] max-sm:shadow-[0_-4px_16px_rgb(0_0
+         +_0/0.12)]',
+      49          'sm:absolute sm:top-(--t) sm:right-(--r) sm:bottom-(--b
+          ) sm:left-(--l) sm:w-[40%] sm:min-w-64',
+      50          'sm:rounded-md sm:p-3 sm:shadow-lg',
+      51          'transition-[opacity,scale,translate] ease-out-expo',
+     ...
+      71            <p>{note.text}</p>
+      72          </div>
+      73        ))}
+      73 -      <nav className={cn('flex items-center justify-between gap
+         --2', 'border-t border-ink/10 pt-2', 'text-xs')}>
+      74 +      <nav
+      75 +        className={cn(
+      76 +          'flex items-center justify-between gap-2 bg-white',
+      77 +          'text-xs',
+      78 +          'sm:border-t sm:border-ink/10 sm:pt-2',
+      79 +          'max-sm:sticky max-sm:top-0 max-sm:order-first max-sm
+         +:border-b max-sm:border-ink/10 max-sm:py-2',
+      80 +        )}
+      81 +      >
+      82          <StepButton disabled={nav.at === 1} onClick={() => nav.
+          onStep(-1)}>
+      83            Prev
+      84          </StepButton>
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+⏺ Notes 1 and 2 share a rect, so the tap target is covered. I'm tapping with
+  force instead.
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+⏺ The nav row now sits at the top of the sheet. Committing, then starting on
+  keyboard and screen reader support.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      def edit(p,a,b):…)
+  ⎿  $ oxfmt
+     src/app/home/Home.tsx(50,11): error TS2451: Cannot redeclare block-sco
+     ped variable 'card'.
+     … +6 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/Home.tsx (+41 -7)
+       7
+       8  export default function Home() {
+       9    const [active, setActive] = useState<Selection | null>(null)
+      10 -  const target = useRef<number | null>(null)
+      10 +  const opened = useRef(false)
+      11
+      12    const pick = (page: number, notes: number[]) =>
+      13      setActive((prev) => {
+     ...
+      18    const step = (dir: 1 | -1) => {
+      19      if (!active) return
+      20      const next = stops[stopIndex(active.notes) + dir]
+      21 -    if (!next) return
+      22 -    target.current = next.notes[0]
+      23 -    setActive(next)
+      21 +    if (next) setActive(next)
+      22    }
+      23
+      24 +  const close = () => {
+      25 +    if (!active) return
+      26 +    const lead = stops[stopIndex(active.notes)]?.notes[0]
+      27 +    setActive(null)
+      28 +    document.querySelector<HTMLElement>(`[data-lead="${lead}"]`
+         +)?.focus({ preventScroll: true })
+      29 +  }
+      30 +
+      31 +  useEffect(() => {
+      32 +    if (!active) return
+      33 +    const onKey = (e: KeyboardEvent) => {
+      34 +      if (e.key === 'Escape') close()
+      35 +      else if (e.key === 'ArrowRight') step(1)
+      36 +      else if (e.key === 'ArrowLeft') step(-1)
+      37 +      else return
+      38 +      e.preventDefault()
+      39 +    }
+      40 +    addEventListener('keydown', onKey)
+      41 +    return () => removeEventListener('keydown', onKey)
+      42 +  })
+      43 +
+      44    useEffect(() => {
+      27 -    const n = target.current
+      28 -    target.current = null
+     … 36 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+29 -4)
+       3  import { cn } from '@/lib/utils'
+       4
+       5  type NoteCardProps = {
+       6 +  id: string
+       7 +  label: string
+       8 +  onClose: () => void
+       9    notes: Note[]
+      10    cats: Record<string, string>
+      11    open: boolean
+      12    nav: { at: number; total: number; onStep: (dir: 1 | -1) => vo
+          id }
+      13  }
+      14
+      12 -export function NoteCard({ notes, cats, open, nav }: NoteCardPr
+         -ops) {
+      15 +export function NoteCard({ id, label, onClose, notes, cats, ope
+         +n, nav }: NoteCardProps) {
+      16    const rects = notes.flatMap((n) => n.rects)
+      17    const left = Math.min(...rects.map(([x]) => x))
+      18    const right = Math.max(...rects.map(([x, , w]) => x + w))
+     ...
+      43
+      44    return (
+      45      <aside
+      46 +      id={id}
+      47 +      role="dialog"
+      48 +      aria-label={label}
+      49 +      tabIndex={-1}
+      50        className={cn(
+      44 -        'pointer-events-none z-10 grid gap-3 bg-white',
+      51 +        'pointer-events-none z-10 grid gap-3 bg-white outline-n
+         +one',
+      52          'text-sm leading-snug text-ink',
+      53          'max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:m
+          ax-h-[40vh] max-sm:overflow-y-auto',
+      54          // iOS Safari floats its toolbar over the page bottom,
+          so the padding leaves room to scroll the last line above it.
+     ...
+      79          </div>
+      80        ))}
+      81        <nav
+      82 +        aria-label="Notes"
+      83          className={cn(
+      84            'flex items-center justify-between gap-2 bg-white',
+      85            'text-xs',
+     ...
+       87            'max-sm:sticky max-sm:top-0 max-sm:order-first max-s
+           m:border-b max-sm:border-ink/10 max-sm:py-2',
+       88          )}
+       89        >
+     … 38 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteHighlight.tsx (+21 -1)
+       9    rects: Rect[]
+      10    src: string
+      11    state: HighlightState
+      12 +  lead?: { at: number; label: string; expanded: boolean; contro
+         +ls: string; onOpen: () => void }
+      13  }
+      14
+      14 -export function NoteHighlight({ note, rects, src, state }: Note
+         -HighlightProps) {
+      15 +export function NoteHighlight({ note, rects, src, state, lead }
+         +: NoteHighlightProps) {
+      16    return rects.map(([x, y, w, h], i) => {
+      17      const hh = h * 1.2
+      18      return (
+     ...
+      52              state === 'dim' && 'blur-[3px]',
+      53            )}
+      54          />
+      55 +        {lead?.at === i && (
+      56 +          <button
+      57 +            type="button"
+      58 +            data-lead={note.n}
+      59 +            aria-label={lead.label}
+      60 +            aria-expanded={lead.expanded}
+      61 +            aria-controls={lead.controls}
+      62 +            className={cn(
+      63 +              'absolute inset-0 cursor-pointer',
+      64 +              'rounded-xs outline-offset-2 focus-visible:outlin
+         +e-2 focus-visible:outline-ink',
+      65 +            )}
+      66 +            // Keyboard presses report no pointer position for
+         +the page's hit test, so they open this group directly.
+      67 +            onClick={(e) => {
+      68 +              if (e.detail !== 0) return
+      69 +              e.stopPropagation()
+      70 +              lead.onOpen()
+      71 +            }}
+      72 +          />
+      73 +        )}
+      74        </div>
+      75      )
+      76    })
+  ⎿  Updated reader-app/src/app/home/components/Sheet.tsx (+30 -7)
+       6  import { useMediaQuery } from '@/hooks/useMediaQuery'
+       7  import { NoteCard } from '@/app/home/components/NoteCard'
+       8  import { NoteHighlight } from '@/app/home/components/NoteHighli
+          ght'
+       9 -import { stopIndex, stops } from '@/app/home/selection'
+       9 +import { stopIndex, stopOf, stops } from '@/app/home/selection'
+      10  import type { Selection } from '@/app/home/selection'
+      11
+      12  type SheetProps = {
+     ...
+      17    selection: Selection | null
+      18    onPick: (notes: number[]) => void
+      19    onStep: (dir: 1 | -1) => void
+      20 +  onClose: () => void
+      21  }
+      22
+      23  const none: number[] = []
+     ...
+      30
+      31  const toFrame = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect): R
+          ect => [(x - sx) / sw, (y - sy) / sh, w / sw, h / sh]
+      32
+      32 -export function Sheet({ page, notes, strips, cats, selection, o
+         -nPick, onStep }: SheetProps) {
+      33 +export function Sheet({ page, notes, strips, cats, selection, o
+         +nPick, onStep, onClose }: SheetProps) {
+      34    // The card keeps the last selection it showed so it can fade
+           out with its content still in it.
+      35    const [shown, setShown] = useState<Selection | null>(null)
+      36    if (selection && selection !== shown) setShown(selection)
+     ...
+      43      ? strips
+      44      : [{ page, box: [0, 0, 1, 1], src: `pages/p${String(page).p
+          adStart(2, '0')}.jpg` }]
+      45
+      46 +  const cardId = `note-card-p${page}`
+      47 +  const describe = (ns: number[]) =>
+      48 +    ns.map((n) => `Note ${n}, ${cats[notes.find((note) => note.
+         +n === n)?.cat ?? '']}`).join('; ')
+      49 +
+      50    const hitsAt = (e: MouseEvent<HTMLElement>) => {
+      51      const sheet = e.currentTarget
+      52      const hits = new Set<number>()
+     ...
+      60      <section
+      61        className={cn('relative w-full max-w-204', 'bg-white shad
+          ow-[0_1px_4px_rgb(0_0_0/0.15)]')}
+      62        id={`p${page}`}
+      63 +      aria-label={`Page ${page}`}
+      64        onClick={(e) => onPick(hitsAt(e))}
+      65      >
+      60 -      {frames.map(({ box, src }) => (
+     … 51 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/selection.ts (+2 -0)
+      13
+      14  export const stops = [...groups.values()].sort((a, b) => a.note
+          s[0] - b.notes[0])
+      15
+      16 +export const stopOf = (n: number) => stops.find((s) => s.notes[
+         +0] === n)
+      17 +
+      18  export const stopIndex = (notes: number[]) => {
+      19    const first = Math.min(...notes)
+      20    return stops.findIndex((s) => s.notes.includes(first))
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      p='src/app/home/Home.tsx'; s=open(p).read()…)
+  ⎿  $ oxfmt
+     ✓ built in 237ms
+     $ oxlint
+     … +56 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/Home.tsx (+3 -9)
+      1 -import { Fragment, useEffect, useRef, useState } from 'react'
+      1 +import { Fragment, useEffect, useState } from 'react'
+      2  import { paper } from '@/data/paper'
+      3  import { sameList } from '@/lib/utils'
+      4  import { Sheet } from '@/app/home/components/Sheet'
+     ...
+       7
+       8  export default function Home() {
+       9    const [active, setActive] = useState<Selection | null>(null)
+      10 -  const opened = useRef(false)
+      10
+      11    const pick = (page: number, notes: number[]) =>
+      12      setActive((prev) => {
+     ...
+      41    })
+      42
+      43    useEffect(() => {
+      45 -    if (!active) {
+      46 -      opened.current = false
+      47 -      return
+      48 -    }
+      44 +    if (!active) return
+      45      const el = document.querySelector(`[data-note="${active.not
+          es[0]}"]`)
+      46      const card = document.querySelector<HTMLElement>('aside:not
+          ([inert])')
+      47      if (!el) return
+     ...
+      49      // Stepping from a Prev or Next button lands on the same bu
+          tton in the new card, so repeated presses keep working.
+      50      const from = document.activeElement instanceof HTMLElement
+          ? document.activeElement.dataset.step : undefined
+      51      const button = from && card?.querySelector<HTMLButtonElemen
+          t>(`[data-step="${from}"]:not(:disabled)`)
+      56 -    if (opened.current || document.activeElement !== document.b
+         -ody) (button || card)?.focus({ preventScroll: true })
+      57 -    opened.current = true
+      52 +    ;(button || card)?.focus({ preventScroll: true })
+      53
+      54      const phone = matchMedia('(max-width: 639px)').matches
+      60 -    const card = document.querySelector('aside:not([inert])')
+      55      const boxes = [el, ...(card && !phone ? [card] : [])].map((
+          e) => e.getBoundingClientRect())
+      56      const top = Math.min(...boxes.map((b) => b.top))
+      57      const bottom = Math.max(...boxes.map((b) => b.bottom))
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      p='src/app/home/Home.tsx'; s=open(p).read()…)
+  ⎿  $ oxfmt
+     ✓ built in 349ms
+     $ oxlint
+     … +18 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/Home.tsx (+11 -5)
+      1 -import { Fragment, useEffect, useState } from 'react'
+      1 +import { Fragment, useEffect, useRef, useState } from 'react'
+      2  import { paper } from '@/data/paper'
+      3  import { sameList } from '@/lib/utils'
+      4  import { Sheet } from '@/app/home/components/Sheet'
+     ...
+       7
+       8  export default function Home() {
+       9    const [active, setActive] = useState<Selection | null>(null)
+      10 +  const stepFrom = useRef<string | undefined>(undefined)
+      11
+      12    const pick = (page: number, notes: number[]) =>
+      13      setActive((prev) => {
+     ...
+      18    const step = (dir: 1 | -1) => {
+      19      if (!active) return
+      20      const next = stops[stopIndex(active.notes) + dir]
+      20 -    if (next) setActive(next)
+      21 +    if (!next) return
+      22 +    // The old card goes inert when the step crosses a page, wh
+         +ich drops focus, so remember the button now.
+      23 +    stepFrom.current = document.activeElement instanceof HTMLEl
+         +ement ? document.activeElement.dataset.step : undefined
+      24 +    setActive(next)
+      25    }
+      26
+      27    const close = () => {
+     ...
+      51      if (!el) return
+      52
+      53      // Stepping from a Prev or Next button lands on the same bu
+          tton in the new card, so repeated presses keep working.
+      50 -    const from = document.activeElement instanceof HTMLElement
+         -? document.activeElement.dataset.step : undefined
+      51 -    const button = from && card?.querySelector<HTMLButtonElemen
+         -t>(`[data-step="${from}"]:not(:disabled)`)
+      52 -    ;(button || card)?.focus({ preventScroll: true })
+      54 +    const from = stepFrom.current
+      55 +    stepFrom.current = undefined
+      56 +    const button = from ? card?.querySelector<HTMLButtonElement
+         +>(`[data-step="${from}"]:not(:disabled)`) : null
+      57 +    const into = button ?? card
+      58 +    into?.focus({ preventScroll: true })
+      59
+      60      const phone = matchMedia('(max-width: 639px)').matches
+      61      const boxes = [el, ...(card && !phone ? [card] : [])].map((
+          e) => e.getBoundingClientRect())
+  ⎿  (timeout 3m)
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ The card in that screenshot runs past the fold. I'm checking whether the app's
+  scroll logic caused it or the Home keypress in my test did.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ Needs you
+
+  - The keyboard and screen reader work is not committed yet. Commit it once
+    you've tried it.
+  - I haven't run a real screen reader. Please give VoiceOver on your iPhone a
+    quick pass: swipe to a highlight, double-tap it, then swipe through the
+    card.
+
+  Phone sheet fix
+
+  The Prev/Next row now sits at the top of the sheet and stays pinned there
+  while the note scrolls. Safari's floating toolbar can no longer cover it. The
+  sheet also has extra bottom padding, so the last line of a long note can
+  scroll clear of the toolbar. This fix, along with the click-only notes and the
+  renumbering, is committed as 9676308.
+
+  Keyboard
+
+  - Tab moves through the highlights in reading order. There are 49 tab stops,
+    one per group of notes. Notes 1 and 2 share a highlight, so they are one
+    stop. A focused highlight gets a dark outline.
+  - Enter or Space opens the focused highlight's note. Focus moves into the
+    card.
+  - Left and Right arrows go to the previous and next note while a card is open,
+    including across pages. They stop at the first and last note.
+  - Tab inside a card reaches Prev and Next. Pressing Enter on Next repeatedly
+    keeps focus on Next, even when the next note is on another page.
+  - Escape closes the card and puts focus back on the highlight that opened it.
+
+  Screen readers
+
+  - Each highlight is a button. Its label reads like "Open Note 3, Results and
+    conclusions", and it reports whether its note is open.
+  - The card is a labelled dialog. A screen reader announces something like
+    "Note 3, Results and conclusions" when it opens.
+  - The Prev and Next buttons have spoken labels. They read "Previous note" and
+    "Next note", and they announce their arrow-key shortcuts.
+  - The card has a hidden "Close note" button. Touch screen readers have no
+    Escape key, so this button lets VoiceOver users close the card.
+  - The page starts with a hidden heading and a one-line instruction. They
+    explain the highlights and the arrow keys.
+  - Each page is labelled "Page N". On the phone, only the first strip of a page
+    carries the image description, so a screen reader doesn't read the page
+    name three times.
+
+  The paper's own text is still only a picture, so a screen reader can read your
+  notes but not the paper. Fixing that would mean adding the page text as a
+  hidden layer.
+
+  What I checked
+
+  I tested the keyboard flow in headless Playwright at 1440×900 with no console
+  errors:
+  - Tab and Enter. Tabbing reached the note 1 and 2 group first, then note 3.
+    Enter opened note 3 with focus in the card.
+  - Arrow keys across pages. Four Right presses crossed onto page 2.
+  - Enter on Next. Pressing Enter on the Next button three times kept focus on
+    it.
+  - Escape and Space. Escape put focus back on the right highlight, and Space
+    reopened it.
+  - The first note. Left on note 1 stayed put.
+  - Card placement. After a keyboard open, the card fit fully on screen.
+  - The phone layout. It also has 49 focusable highlights.
+
+
+✻ Brewed for 5m 40s · done 8:11 PM
+
+❯ this is a sort of specific bug but on page one after i click next on the
+  first note, i get navigated to the next note but i dont' see the
+  navigatino/ntoe show up since i think it's thinking i am on the next page?
+  [Image #3]
+  ⎿  [Image #3]
+
+⏺ I'm reproducing this in Playwright's WebKit engine with iPhone emulation,
+  since Chromium didn't show it.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ WebKit emulation doesn't reproduce the bug—the sheet stays visible after Next
+  in both engines, so it's specific to real iOS Safari. I'll check if an iOS
+  Simulator is available to test in actual Mobile Safari.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ The iPhone 17 simulator is installed. I'm adding a temporary test script that
+  opens note 1 and then presses Next, and running it in real Mobile Safari. I'll
+  remove the script afterward.
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app;
+      S=/private/tmp/claude-501/-Users-hlahtun-Documents-UMD/42a8bf5a-816e-4808-
+      833c-4d4cb3a01d7a/scratchpad;…)
+  ⎿  Unable to find application named 'Simulator'
+     An error was encountered processing the command (domain=NSPOSIXErrorDo
+     main, code=60):
+     … +6 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/index.html (+1 -0)
+      11    </head>
+      12    <body class="touch-manipulation bg-ground px-4 font-sans text
+          -ink">
+      13      <div id="root"></div>
+      14 +    <script src="/autotest.js"></script>
+      15      <script type="module" src="/src/main.tsx"></script>
+      16    </body>
+      17  </html>
+  ⎿  Created reader-app/public/autotest.js (+6 -0)
+      1 +if (location.search.includes('autotest')) {
+      2 +  const log = (m) => { const d = document.getElementById('dbg')
+        +|| Object.assign(document.body.appendChild(document.createElemen
+        +t('pre')), { id: 'dbg' }); d.style.cssText = 'position:fixed;top
+        +:40px;left:0;right:0;z-index:99;background:#ff0;font:11px monosp
+        +ace;margin:0;white-space:pre-wrap'; d.textContent += m + '\n' }
+      3 +  const card = () => { const a = document.querySelector('aside:n
+        +ot([inert])'); if (!a) return 'no card'; const r = a.getBounding
+        +ClientRect(); return `card ${Math.round(r.top)}-${Math.round(r.b
+        +ottom)} op=${getComputedStyle(a).opacity} y=${Math.round(scrollY
+        +)} ih=${innerHeight} focus=${document.activeElement.tagName}` }
+      4 +  setTimeout(() => { document.querySelector('[data-lead="1"]').c
+        +lick(); setTimeout(() => log('open: ' + card()), 800) }, 2500)
+      5 +  setTimeout(() => { document.querySelector('aside:not([inert])
+        +[data-step="next"]').click(); log('after next: ' + card()); setT
+        +imeout(() => log('next+1.5s: ' + card()), 1500) }, 5000)
+      6 +}
+  ⎿  (timeout 3m)
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+⏺ The Simulator's Safari shows the sheet correctly after Next, but my test used
+  a scripted .click(), not a real tap. I'm looking for the Simulator app so I
+  can send real touches.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+❯ it's with the scroll, if  i scroll a bit the note show up properly. so i
+  think it's the smooth scrolling the page and the ntoe showing, something
+  finiky going on there?
+
+⏺ This matches a known iOS Safari bug where fixed elements don't repaint during
+  programmatic smooth scrolls. I'll fix it by forcing the element onto its own
+  compositing layer and remove the test script.
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app;
+      S=/private/tmp/claude-501/-Users-hlahtun-Documents-UMD/42a8bf5a-816e-4808-
+      833c-4d4cb3a01d7a/scratchpad;…)
+  ⎿  $ oxfmt
+     ✓ built in 371ms
+     $ oxlint
+     … +5 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/index.html (+0 -1)
+      11    </head>
+      12    <body class="touch-manipulation bg-ground px-4 font-sans text
+          -ink">
+      13      <div id="root"></div>
+      14 -    <script src="/autotest.js"></script>
+      14      <script type="module" src="/src/main.tsx"></script>
+      15    </body>
+      16  </html>
+  ⎿  Deleted reader-app/public/autotest.js (+0 -6)
+      1 -if (location.search.includes('autotest')) {
+      2 -  const log = (m) => { const d = document.getElementById('dbg')
+        -|| Object.assign(document.body.appendChild(document.createElemen
+        -t('pre')), { id: 'dbg' }); d.style.cssText = 'position:fixed;top
+        -:40px;left:0;right:0;z-index:99;background:#ff0;font:11px monosp
+        -ace;margin:0;white-space:pre-wrap'; d.textContent += m + '\n' }
+      3 -  const card = () => { const a = document.querySelector('aside:n
+        -ot([inert])'); if (!a) return 'no card'; const r = a.getBounding
+        -ClientRect(); return `card ${Math.round(r.top)}-${Math.round(r.b
+        -ottom)} op=${getComputedStyle(a).opacity} y=${Math.round(scrollY
+        -)} ih=${innerHeight} focus=${document.activeElement.tagName}` }
+      4 -  setTimeout(() => { document.querySelector('[data-lead="1"]').c
+        -lick(); setTimeout(() => log('open: ' + card()), 800) }, 2500)
+      5 -  setTimeout(() => { document.querySelector('aside:not([inert])
+        -[data-step="next"]').click(); log('after next: ' + card()); setT
+        -imeout(() => log('next+1.5s: ' + card()), 1500) }, 5000)
+      6 -}
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+2 -0)
+      51          'pointer-events-none z-10 grid gap-3 bg-white outline-n
+          one',
+      52          'text-sm leading-snug text-ink',
+      53          'max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:m
+          ax-h-[40vh] max-sm:overflow-y-auto',
+      54 +        // iOS Safari can skip repainting a fixed sheet during
+         +a smooth scroll, so give it its own compositing layer.
+      55 +        'max-sm:transform-gpu max-sm:will-change-transform',
+      56          // iOS Safari floats its toolbar over the page bottom,
+          so the padding leaves room to scroll the last line above it.
+      57          'max-sm:rounded-t-xl max-sm:px-4 max-sm:pb-[calc(5rem+e
+          nv(safe-area-inset-bottom))] max-sm:shadow-[0_-4px_16px_rgb(0_0
+          _0/0.12)]',
+      58          'sm:absolute sm:top-(--t) sm:right-(--r) sm:bottom-(--b
+          ) sm:left-(--l) sm:w-[40%] sm:min-w-64',
+  ⎿  (timeout 2m)
+
+⏺ Needs you
+
+  - Please retest on your phone. Reload http://10.0.0.178:5174, open note 1 on
+    page 1, and tap Next without scrolling. I can't confirm the fix myself,
+    because my simulator can only send scripted clicks, and those never
+    triggered the bug.
+  - Nothing is committed yet. The keyboard and screen reader work is still
+    uncommitted, and so is this fix.
+
+  The fix
+
+  Your read is right. The note is there, but iOS Safari doesn't redraw it after
+  the page's smooth scroll. That is a known iOS Safari bug with position: fixed
+  elements. A scroll with your finger forces the redraw, which is why the note
+  then appears.
+
+  I gave the phone sheet its own compositing layer (transform-gpu plus
+  will-change-transform). Safari then moves the sheet along with the screen
+  instead of repainting it after the scroll. That is the usual fix for this bug.
+  The build and lint pass.
+
+  If it still disappears
+
+  The fallback is to make the jump instant on phones, with no smooth scroll
+  there. That avoids the bug completely, but the jump to the next note won't
+  animate.
+
+  What I tried first
+
+  Playwright's WebKit and the iPhone 17 simulator's Safari both kept the sheet
+  visible after Next. Both runs used scripted clicks, though, so neither matched
+  a real finger tap. I removed the temporary test script and shut the simulator
+  down.
+
+✻ Worked for 5m 29s · done 8:18 PM
+
+❯ nah still not working. [Image #4] [Image #5] the second ss is after i
+  scrolled a tiny bit
+[Image #4]
+  ⎿  [Image #5]
+
+⏺ The compositing layer didn't help, so I'm removing it and switching to the
+  fallback: on phones, the jump to the next note is instant instead of smooth.
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      def edit(p,a,b):…)
+  ⎿  $ oxfmt
+     ✓ built in 238ms
+     $ oxlint
+     … +8 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/Home.tsx (+2 -1)
+      64      // The phone's bottom sheet covers the lower 40% of the scr
+          een, so a passage behind it counts as off screen.
+      65      const floor = innerHeight * (phone ? 0.6 : 1)
+      66      if (top >= 0 && bottom <= floor) return
+      67 -    const smooth = !matchMedia('(prefers-reduced-motion: reduce
+         -)').matches
+      67 +    // iOS doesn't redraw the fixed bottom sheet after a smooth
+         + scroll until the user scrolls, so phones jump instead.
+      68 +    const smooth = !phone && !matchMedia('(prefers-reduced-moti
+         +on: reduce)').matches
+      69      const slack = Math.max(floor - (bottom - top), 0)
+      70      scrollBy({ top: top - Math.min(slack / 2, innerHeight * 0.1
+          ), behavior: smooth ? 'smooth' : 'auto' })
+      71    }, [active])
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+0 -2)
+      51          'pointer-events-none z-10 grid gap-3 bg-white outline-n
+          one',
+      52          'text-sm leading-snug text-ink',
+      53          'max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:m
+          ax-h-[40vh] max-sm:overflow-y-auto',
+      54 -        // iOS Safari can skip repainting a fixed sheet during
+         -a smooth scroll, so give it its own compositing layer.
+      55 -        'max-sm:transform-gpu max-sm:will-change-transform',
+      54          // iOS Safari floats its toolbar over the page bottom,
+          so the padding leaves room to scroll the last line above it.
+      55          'max-sm:rounded-t-xl max-sm:px-4 max-sm:pb-[calc(5rem+e
+          nv(safe-area-inset-bottom))] max-sm:shadow-[0_-4px_16px_rgb(0_0
+          _0/0.12)]',
+      56          'sm:absolute sm:top-(--t) sm:right-(--r) sm:bottom-(--b
+          ) sm:left-(--l) sm:w-[40%] sm:min-w-64',
+
+⏺ Needs you
+
+  - Please retest on your phone. Reload, open note 1, and tap Next without
+    scrolling.
+  - The keyboard and screen reader work is still uncommitted. I'll commit it
+    along with this fix once the phone test passes.
+
+  Instant jump on phones
+
+  The compositing-layer fix didn't help, so I removed it. On screens narrower
+  than 640px, the jump to the next note now happens instantly instead of
+  scrolling smoothly. Desktop keeps the smooth scroll, since the card there
+  isn't a fixed sheet. The build and lint pass.
+
+  Your screenshots confirm the note is there all along. Your browser is Brave,
+  which runs on the same WebKit engine as Safari on iOS. After the smooth scroll
+  ends, WebKit doesn't redraw the fixed sheet until you scroll yourself. An
+  instant jump avoids that animation completely.
+
+  If the sheet still goes missing after an instant jump, the scroll itself is
+  the trigger, not the animation. In that case, the next option is to skip
+  scrolling on phones when the next note is already visible above the sheet.
+  Note 3 was already on screen in your screenshot, so page 1 wouldn't need a
+  scroll at all.
+
+✻ Crunched for 21s · done 8:20 PM
+
+❯ works now, commit it. next, i want to provide more command on the opened
+  note, to maybe go to the first and last or idk let's brainstrom a bit. and i
+  think a menu button to go to the numbered note or page? thoughts?
+
+  Read 1 file, ran 2 shell commands (ctrl+o to expand)
+
+⏺ Needs you
+
+  - Two decisions before I build anything. Should Prev and Next skip to notes of
+    the same category when a category filter is on? And where should the menu
+    button sit? My recommendation is under "Recommendation" below.
+
+  Committed as 9c91eda.
+
+  First and last buttons
+
+  I'd skip First and Last buttons in the card. With 49 notes you'd rarely jump
+  to either end, and two more buttons crowd the phone sheet. The menu below
+  covers that need better. For keyboards, Home and End could jump to the first
+  and last note, which costs nothing on screen.
+
+  Card commands worth adding
+
+  - A visible close button. On desktop, the only way to close a card right now
+    is clicking blank space, which nobody will find on their own. A small
+    "Close" next to the counter fixes that.
+  - Filter by category. Tapping the category label (for example "Definitions")
+    would make Prev and Next step only through Definitions notes. The counter
+    would then read "2 of 9 Definitions". This makes the 8 colors useful, and a
+    grader could read all your "My own questions" notes in a row.
+  - A copyable link to the note. A link like …/#note-12 would open the app on
+    note 12.
+
+  The menu
+
+  One menu button would open a panel listing the paper's sections (from the TOC
+  data already in paper.json). Each section would show its page number and,
+  under it, its notes. A note row would have the number, a color dot, the
+  category and the first few words of the note. Tapping a section jumps to its
+  page, and tapping a note opens it. That covers "go to page" and "go to note"
+  in one list, and the sections give each note context that a bare list of 1 to
+  51 wouldn't. The 8 category filters would sit at the top of the panel.
+
+  On desktop, the button would sit in a top corner and open a side panel. On the
+  phone, the note sheet already uses the bottom of the screen, so the button
+  would sit at the top and open a full-height sheet. Opening the menu closes any
+  open note.
+
+  Recommendation
+
+  - Build first: the menu, with sections, notes and category filters.
+  - Counter as a second trigger: the "2 of 49" counter opens the same menu,
+    scrolled to the current note.
+  - Small extras: a visible Close button, plus Home and End keys.
+  - Later, if time allows: the category-filtered stepping and the note links.
+
+  Tell me which parts you want and I'll start.
+
+✻ Churned for 38s · done 8:22 PM
+
+❯ alright neat, lets do the first three recommendations
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ I'll use the PDF's table of contents heading positions to assign each note to
+  its correct section in reading order during the build process.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Sections line up with the paper: every note lands under the heading it sits
+  beneath. Now the front end.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      def edit(p,a,b):…)
+  ⎿  ok
+  ⎿  Created reader-app/src/app/home/components/Contents.tsx (+150 -0)
+        1 +import { useEffect, useRef, useState } from 'react'
+        2 +import type { ComponentProps, CSSProperties } from 'react'
+        3 +import { paper } from '@/data/paper'
+        4 +import { cn } from '@/lib/utils'
+        5 +
+        6 +type ContentsProps = {
+        7 +  open: boolean
+        8 +  current: number[]
+        9 +  onClose: () => void
+       10 +  onNote: (n: number) => void
+       11 +  onSection: (i: number) => void
+       12 +}
+       13 +
+       14 +export function Contents({ open, current, onClose, onNote, onS
+          +ection }: ContentsProps) {
+       15 +  const ref = useRef<HTMLDialogElement>(null)
+       16 +  const [hidden, setHidden] = useState<Set<string>>(() => new
+          +Set())
+       17 +
+       18 +  useEffect(() => {
+       19 +    const dialog = ref.current
+       20 +    if (!dialog) return
+       21 +    if (open && !dialog.open) {
+       22 +      dialog.showModal()
+       23 +      const row = dialog.querySelector<HTMLElement>(`[data-men
+          +u-note="${current[0]}"]`)
+       24 +      row?.scrollIntoView({ block: 'center' })
+       25 +      row?.focus()
+       26 +    }
+       27 +    if (!open && dialog.open) dialog.close()
+       28 +  }, [open, current])
+       29 +
+       30 +  const toggle = (cat: string) =>
+       31 +    setHidden((prev) => {
+       32 +      const next = new Set(prev)
+       33 +      if (next.has(cat)) next.delete(cat)
+       34 +      else next.add(cat)
+       35 +      return next
+       36 +    })
+       37 +
+       38 +  return (
+       39 +    <dialog
+       40 +      ref={ref}
+     … 110 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/selection.ts (+2 -0)
+      15
+      16  export const stopOf = (n: number) => stops.find((s) => s.notes[
+          0] === n)
+      17
+      18 +export const stopWith = (n: number) => stops.find((s) => s.note
+         +s.includes(n))
+      19 +
+      20  export const stopIndex = (notes: number[]) => {
+      21    const first = Math.min(...notes)
+      22    return stops.findIndex((s) => s.notes.includes(first))
+  ⎿  Updated reader-app/src/lib/types.ts (+3 -0)
+       7    cat: string
+       8    text: string
+       9    rects: Rect[]
+      10 +  section: number
+      11  }
+      12
+      13  export type TocEntry = {
+      14    level: number
+      15    title: string
+      16    page: number
+      17 +  x: number
+      18 +  y: number
+      19  }
+      20
+      21  export type Strip = {
+
+⏺ Bash(cd /Users/hlahtun/Documents/UMD/courses/chi/reader-app; python3 - <<'EOF'
+      def edit(p,a,b):…)
+  ⎿  $ oxfmt
+     ✓ built in 240ms
+     $ oxlint
+     … +51 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/Home.tsx (+60 -4)
+       1  import { Fragment, useEffect, useRef, useState } from 'react'
+       2  import { paper } from '@/data/paper'
+       3 -import { sameList } from '@/lib/utils'
+       3 +import { cn, sameList } from '@/lib/utils'
+       4 +import { Contents } from '@/app/home/components/Contents'
+       5  import { Sheet } from '@/app/home/components/Sheet'
+       5 -import { stopIndex, stops } from '@/app/home/selection'
+       6 +import { stopIndex, stopWith, stops } from '@/app/home/selectio
+         +n'
+       7  import type { Selection } from '@/app/home/selection'
+       8
+       9  export default function Home() {
+      10    const [active, setActive] = useState<Selection | null>(null)
+      11    const stepFrom = useRef<string | undefined>(undefined)
+      12 +  const [menu, setMenu] = useState(false)
+      13 +  const jump = useRef<number | null>(null)
+      14
+      15    const pick = (page: number, notes: number[]) =>
+      16      setActive((prev) => {
+     ...
+      27      setActive(next)
+      28    }
+      29
+      30 +  const go = (i: number) => {
+      31 +    const stop = stops[i]
+      32 +    if (stop) setActive(stop)
+      33 +  }
+      34 +
+      35 +  const openNote = (n: number) => {
+      36 +    setMenu(false)
+      37 +    const stop = stopWith(n)
+      38 +    if (stop) setActive(stop)
+      39 +  }
+      40 +
+      41 +  const openSection = (i: number) => {
+      42 +    jump.current = i
+      43 +    setActive(null)
+      44 +    setMenu(false)
+      45 +  }
+      46 +
+      47    const close = () => {
+      48      if (!active) return
+     … 75 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/Contents.tsx (+6 -2)
+      49          'open:flex open:flex-col',
+      50          'transition-[opacity,translate,display,overlay] transit
+          ion-discrete duration-200 ease-out-expo',
+      51          'opacity-0 open:opacity-100 starting:open:opacity-0',
+      52 -        'max-sm:motion-safe:translate-y-4 sm:motion-safe:transl
+         -ate-x-6 open:translate-none',
+      52 +        'open:translate-none max-sm:motion-safe:translate-y-4 s
+         +m:motion-safe:translate-x-6',
+      53          'max-sm:motion-safe:starting:open:translate-y-4 sm:moti
+          on-safe:starting:open:translate-x-6',
+      54        )}
+      55      >
+     ...
+      65          <PanelButton onClick={onClose}>Close</PanelButton>
+      66        </header>
+      67
+      68 -      <div role="group" aria-label="Show categories" className=
+         -"flex flex-wrap gap-1.5 border-b border-ink/10 px-4 py-3">
+      68 +      <div
+      69 +        role="group"
+      70 +        aria-label="Show categories"
+      71 +        className="flex flex-wrap gap-1.5 border-b border-ink/1
+         +0 px-4 py-3"
+      72 +      >
+      73          {Object.entries(paper.cats).map(([cat, label]) => (
+      74            <button
+      75              key={cat}
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+34 -26)
+       6    id: string
+       7    label: string
+       8    onClose: () => void
+       9 +  onMenu: () => void
+      10    notes: Note[]
+      11    cats: Record<string, string>
+      12    open: boolean
+      13    nav: { at: number; total: number; onStep: (dir: 1 | -1) => vo
+          id }
+      14  }
+      15
+      15 -export function NoteCard({ id, label, onClose, notes, cats, ope
+         -n, nav }: NoteCardProps) {
+      16 +export function NoteCard({ id, label, onClose, onMenu, notes, c
+         +ats, open, nav }: NoteCardProps) {
+      17    const rects = notes.flatMap((n) => n.rects)
+      18    const left = Math.min(...rects.map(([x]) => x))
+      19    const right = Math.max(...rects.map(([x, , w]) => x + w))
+     ...
+       88            'max-sm:sticky max-sm:top-0 max-sm:order-first max-s
+           m:border-b max-sm:border-ink/10 max-sm:py-2',
+       89          )}
+       90        >
+       90 -        <StepButton
+       91 -          data-step="prev"
+       92 -          aria-label="Previous note"
+       93 -          aria-keyshortcuts="ArrowLeft"
+       94 -          disabled={nav.at === 1}
+       95 -          onClick={() => nav.onStep(-1)}
+       96 -        >
+       97 -          Prev
+       98 -        </StepButton>
+       99 -        <span className="text-ink/60 tabular-nums">
+      100 -          {nav.at} of {nav.total}
+      101 -        </span>
+      102 -        <StepButton
+      103 -          data-step="next"
+      104 -          aria-label="Next note"
+      105 -          aria-keyshortcuts="ArrowRight"
+      106 -          disabled={nav.at === nav.total}
+      107 -          onClick={() => nav.onStep(1)}
+      108 -        >
+      109 -          Next
+       91 +        <div className="flex items-center gap-1">
+       92 +          <StepButton
+     … 50 more lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/Sheet.tsx (+24 -2)
+      1  import { useState } from 'react'
+      2  import type { MouseEvent } from 'react'
+      3  import { paper } from '@/data/paper'
+      4 -import type { Note, Rect, Strip } from '@/lib/types'
+      4 +import type { Note, Rect, Strip, TocEntry } from '@/lib/types'
+      5  import { cn } from '@/lib/utils'
+      6  import { useMediaQuery } from '@/hooks/useMediaQuery'
+      7  import { NoteCard } from '@/app/home/components/NoteCard'
+     ...
+      13    page: number
+      14    notes: Note[]
+      15    strips: Strip[]
+      16 +  sections: (TocEntry & { i: number })[]
+      17    cats: Record<string, string>
+      18    selection: Selection | null
+      19    onPick: (notes: number[]) => void
+      20    onStep: (dir: 1 | -1) => void
+      21    onClose: () => void
+      22 +  onMenu: () => void
+      23  }
+      24
+      25  const none: number[] = []
+     ...
+      32
+      33  const toFrame = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect): R
+          ect => [(x - sx) / sw, (y - sy) / sh, w / sw, h / sh]
+      34
+      33 -export function Sheet({ page, notes, strips, cats, selection, o
+         -nPick, onStep, onClose }: SheetProps) {
+      35 +export function Sheet({ page, notes, strips, sections, cats, se
+         +lection, onPick, onStep, onClose, onMenu }: SheetProps) {
+      36    // The card keeps the last selection it showed so it can fade
+           out with its content still in it.
+      37    const [shown, setShown] = useState<Selection | null>(null)
+      38    if (selection && selection !== shown) setShown(selection)
+     ...
+       77              loading={page <= 2 ? 'eager' : 'lazy'}
+       78              className={cn('block w-full', 'transition-[filter]
+            duration-200 ease-out', on && 'blur-[3px]')}
+       79            />
+       80 +          {sections.map((section) => {
+       81 +            // The heading's anchor point sits on its top edge
+          +, so nudge it inward to land in the right strip.
+       82 +            const point: Rect = [section.x + 0.01, section.y +
+          + 0.01, 0, 0]
+       83 +            if (!inside(point, box)) return null
+       84 +            const [x, y] = toFrame([section.x, section.y, 0, 0
+          +], box)
+       85 +            return (
+       86 +              <span
+       87 +                key={section.i}
+     … 21 more lines (ctrl+o to expand)
+
+⏺ Build and lint pass. Testing the whole menu flow in Playwright on desktop and
+  phone.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Test selector hit the hidden instructions paragraph. Targeting the button by
+  role.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Everything passes except one number. On desktop, the 5.1 heading ended 216px
+  from the top instead of 64px. I'm checking the screenshot.
+
+  Read 2 files, ran 2 shell commands (ctrl+o to expand)
+  ⎿  Read ../../../../../.claude/projects/-Users-hlahtun-Documents-UMD/memory/re
+     act-app-structure.md (16 lines)
+  ⎿  Skills restored (animate, artifact-capabilities,
+     figma:figma-create-new-file, figma:figma-use, artifact-design)
+
+⏺ Needs you
+
+  - Commit approval. All three features are built and tested, but nothing is
+    committed yet. Say the word and I'll commit with feat: reader-app; added
+    contents menu with sections, notes and category filters, counter opens menu,
+    close button and home/end keys.
+
+  What shipped
+
+  A "Contents" button now sits in the top right corner. It opens a side panel on
+  desktop and a full-screen panel on phones. The panel lists all 29 sections
+  with their notes nested underneath. Category chips at the top hide or show
+  each category. Picking a note opens it, and picking a section scrolls to that
+  heading.
+
+  The "N of 49" counter in the note card opens the same panel. The panel scrolls
+  to the current note and focuses its row. Esc closes the panel and puts focus
+  back on the counter.
+
+  The card has a visible Close button next to Prev/Next. Home jumps to the first
+  note and End jumps to the last note while a note is open.
+
+  Verification
+
+  The Playwright run passed on desktop (1440×900) and phone (390×844) with no
+  console errors. The build and oxlint are clean.
+
+  In the earlier run, the 5.1 section heading on desktop stopped at 216px from
+  the top instead of 64px. The cause was the smooth scroll still moving when the
+  check ran. I tracked 3 section jumps over 3 seconds. All 3 headings settle at
+  64px after about 1.5 seconds, so no code change was needed.
+
+✻ Crunched for 7m 34s · done 8:31 PM
+
+❯ swap the places of the prev and next with the close button
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Bash(python3 - <<'EOF'
+      p='src/app/home/components/NoteCard.tsx'…)
+  ⎿        <nav
+             aria-label="Notes"
+             className={cn(
+     … +41 lines (ctrl+o to expand)
+  ⎿  Updated reader-app/src/app/home/components/NoteCard.tsx (+3 -3)
+      88            'max-sm:sticky max-sm:top-0 max-sm:order-first max-sm
+          :border-b max-sm:border-ink/10 max-sm:py-2',
+      89          )}
+      90        >
+      91 +        <StepButton aria-keyshortcuts="Escape" onClick={onClose
+         +}>
+      92 +          Close
+      93 +        </StepButton>
+      94          <div className="flex items-center gap-1">
+      95            <StepButton
+      96              data-step="prev"
+     ...
+      119              Next
+      120            </StepButton>
+      121          </div>
+      119 -        <StepButton aria-keyshortcuts="Escape" onClick={onClos
+          -e}>
+      120 -          Close
+      121 -        </StepButton>
+      122        </nav>
+      123      </aside>
+      124    )
+  Read 2 files, ran 1 shell command (ctrl+o to expand)
+
+⏺ Needs you
+
+  - Commit approval. The contents menu work and this swap are both still
+    uncommitted. Say the word and I'll commit them together.
+
+  Change
+
+  Close now sits on the left of the card's nav row, and Prev / "N of 49" / Next
+  sit on the right. The row reads the same on desktop and phone, and I
+  screenshotted both to confirm.
+
+  Tab order follows the new layout, so Close gets focus first. The build passes.
+  The screenshots are at scratchpad/swap-desk.png and
+  scratchpad/swap-phone.png.
+
+✻ Cogitated for 31s · done 8:33 PM
+
+❯ neat, we can commit this now
