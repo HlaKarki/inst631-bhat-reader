@@ -90,7 +90,7 @@ export function Contents({ open, current, onClose, onNote, onSection }: Contents
         ))}
       </div>
 
-      <ol className="flex-1 overflow-y-auto px-2 pt-2 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-4">
+      <ol className="flex-1 overflow-y-auto overscroll-contain px-2 pt-2 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-4">
         {paper.toc.map((section, i) => {
           const notes = paper.notes.filter((n) => n.section === i && !hidden.has(n.cat))
           return (

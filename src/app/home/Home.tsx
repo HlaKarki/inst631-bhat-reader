@@ -3,10 +3,35 @@ import { paper } from '@/data/paper'
 import { cn, sameList } from '@/lib/utils'
 import { Contents } from '@/app/home/components/Contents'
 import { Sheet } from '@/app/home/components/Sheet'
+import { Welcome } from '@/app/home/components/Welcome'
 import { stopIndex, stopWith, stops } from '@/app/home/selection'
 import type { Selection } from '@/app/home/selection'
 
+const floating = cn(
+  'rounded-full bg-white font-medium shadow-[0_1px_4px_rgb(0_0_0/0.2)]',
+  'transition-colors duration-150 ease-out hover:bg-ground',
+  'outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink',
+)
+
+const SEEN = 'welcome-seen'
+
+// Storage can throw in private windows or with site data blocked, so the card just shows again there.
+const seen = () => {
+  try {
+    return localStorage.getItem(SEEN) === '1'
+  } catch {
+    return false
+  }
+}
+
+const remember = () => {
+  try {
+    localStorage.setItem(SEEN, '1')
+  } catch {}
+}
+
 export default function Home() {
+  const [welcome, setWelcome] = useState(() => !seen())
   const [active, setActive] = useState<Selection | null>(null)
   const stepFrom = useRef<string | undefined>(undefined)
   const [menu, setMenu] = useState(false)
@@ -44,6 +69,16 @@ export default function Home() {
     setMenu(false)
   }
 
+  const dismiss = () => {
+    remember()
+    setWelcome(false)
+  }
+
+  const start = () => {
+    dismiss()
+    go(0)
+  }
+
   const close = () => {
     if (!active) return
     const lead = stops[stopIndex(active.notes)]?.notes[0]
@@ -52,7 +87,7 @@ export default function Home() {
   }
 
   useEffect(() => {
-    if (!active || menu) return
+    if (!active || menu || welcome) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close()
       else if (e.key === 'ArrowRight') step(1)
@@ -111,22 +146,30 @@ export default function Home() {
       <p className="sr-only">
         Each highlight is a button that opens its note. With a note open, the left and right arrow keys move to the
         previous and next note, Home and End jump to the first and last note, and Escape closes it. The Contents button
-        lists every section and note.
+        lists every section and note, and the How to read this button shows the introduction again.
       </p>
-      <button
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={menu}
-        onClick={() => setMenu(true)}
-        className={cn(
-          'fixed top-[calc(0.75rem+env(safe-area-inset-top))] right-3 z-20',
-          'rounded-full bg-white px-3.5 py-2 text-sm font-medium shadow-[0_1px_4px_rgb(0_0_0/0.2)]',
-          'transition-colors duration-150 ease-out hover:bg-ground',
-          'outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink',
-        )}
-      >
-        Contents
-      </button>
+      <div className="fixed top-[calc(0.75rem+env(safe-area-inset-top))] right-3 z-20 flex gap-2">
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded={welcome}
+          aria-label="How to read this"
+          onClick={() => setWelcome(true)}
+          className={cn(floating, 'size-9 text-base')}
+        >
+          ?
+        </button>
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded={menu}
+          onClick={() => setMenu(true)}
+          className={cn(floating, 'px-3.5 py-2 text-sm')}
+        >
+          Contents
+        </button>
+      </div>
+      <Welcome open={welcome} onClose={dismiss} onStart={start} />
       <Contents
         open={menu}
         current={active?.notes ?? []}

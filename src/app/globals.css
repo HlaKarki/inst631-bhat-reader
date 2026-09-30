@@ -18,3 +18,8 @@
   --c-policy: #4fd3d3;
   --c-mine: #6fb0ff;
 }
+
+/* Modal dialogs don't stop the page behind them from scrolling, so lock it while one is open. */
+html:has(dialog:modal) {
+  overflow: hidden;
+}
