@@ -9,9 +9,10 @@ type NoteHighlightProps = {
   rects: Rect[]
   src: string
   state: HighlightState
+  lead?: { at: number; label: string; expanded: boolean; controls: string; onOpen: () => void }
 }
 
-export function NoteHighlight({ note, rects, src, state }: NoteHighlightProps) {
+export function NoteHighlight({ note, rects, src, state, lead }: NoteHighlightProps) {
   return rects.map(([x, y, w, h], i) => {
     const hh = h * 1.2
     return (
@@ -51,6 +52,25 @@ export function NoteHighlight({ note, rects, src, state }: NoteHighlightProps) {
             state === 'dim' && 'blur-[3px]',
           )}
         />
+        {lead?.at === i && (
+          <button
+            type="button"
+            data-lead={note.n}
+            aria-label={lead.label}
+            aria-expanded={lead.expanded}
+            aria-controls={lead.controls}
+            className={cn(
+              'absolute inset-0 cursor-pointer',
+              'rounded-xs outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink',
+            )}
+            // Keyboard presses report no pointer position for the page's hit test, so they open this group directly.
+            onClick={(e) => {
+              if (e.detail !== 0) return
+              e.stopPropagation()
+              lead.onOpen()
+            }}
+          />
+        )}
       </div>
     )
   })

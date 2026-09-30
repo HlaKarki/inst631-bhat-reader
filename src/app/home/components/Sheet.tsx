@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { NoteCard } from '@/app/home/components/NoteCard'
 import { NoteHighlight } from '@/app/home/components/NoteHighlight'
-import { stopIndex, stops } from '@/app/home/selection'
+import { stopIndex, stopOf, stops } from '@/app/home/selection'
 import type { Selection } from '@/app/home/selection'
 
 type SheetProps = {
@@ -17,6 +17,7 @@ type SheetProps = {
   selection: Selection | null
   onPick: (notes: number[]) => void
   onStep: (dir: 1 | -1) => void
+  onClose: () => void
 }
 
 const none: number[] = []
@@ -29,7 +30,7 @@ const inside = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect) => {
 
 const toFrame = ([x, y, w, h]: Rect, [sx, sy, sw, sh]: Rect): Rect => [(x - sx) / sw, (y - sy) / sh, w / sw, h / sh]
 
-export function Sheet({ page, notes, strips, cats, selection, onPick, onStep }: SheetProps) {
+export function Sheet({ page, notes, strips, cats, selection, onPick, onStep, onClose }: SheetProps) {
   // The card keeps the last selection it showed so it can fade out with its content still in it.
   const [shown, setShown] = useState<Selection | null>(null)
   if (selection && selection !== shown) setShown(selection)
@@ -41,6 +42,10 @@ export function Sheet({ page, notes, strips, cats, selection, onPick, onStep }: 
   const frames: Strip[] = phone
     ? strips
     : [{ page, box: [0, 0, 1, 1], src: `pages/p${String(page).padStart(2, '0')}.jpg` }]
+
+  const cardId = `note-card-p${page}`
+  const describe = (ns: number[]) =>
+    ns.map((n) => `Note ${n}, ${cats[notes.find((note) => note.n === n)?.cat ?? '']}`).join('; ')
 
   const hitsAt = (e: MouseEvent<HTMLElement>) => {
     const sheet = e.currentTarget
@@ -55,9 +60,10 @@ export function Sheet({ page, notes, strips, cats, selection, onPick, onStep }: 
     <section
       className={cn('relative w-full max-w-204', 'bg-white shadow-[0_1px_4px_rgb(0_0_0/0.15)]')}
       id={`p${page}`}
+      aria-label={`Page ${page}`}
       onClick={(e) => onPick(hitsAt(e))}
     >
-      {frames.map(({ box, src }) => (
+      {frames.map(({ box, src }, f) => (
         <div
           key={src}
           className="relative max-w-full overflow-hidden"
@@ -65,20 +71,34 @@ export function Sheet({ page, notes, strips, cats, selection, onPick, onStep }: 
         >
           <img
             src={src}
-            alt={`Page ${page} of the paper`}
+            alt={f === 0 ? `Page ${page} of the paper` : ''}
             loading={page <= 2 ? 'eager' : 'lazy'}
             className={cn('block w-full', 'transition-[filter] duration-200 ease-out', on && 'blur-[3px]')}
           />
           {notes.map((note) => {
-            const rects = note.rects.filter((r) => inside(r, box)).map((r) => toFrame(r, box))
+            const own = note.rects.map((r, i) => ({ r, i })).filter(({ r }) => inside(r, box))
+            const stop = stopOf(note.n)
+            // Only the first rect of a group's first note is focusable, so each group is one tab stop.
+            const leadAt = stop ? own.findIndex(({ i }) => i === 0) : -1
             return (
-              rects.length > 0 && (
+              own.length > 0 && (
                 <NoteHighlight
                   key={note.n}
                   note={note}
-                  rects={rects}
+                  rects={own.map(({ r }) => toFrame(r, box))}
                   src={src}
                   state={active.includes(note.n) ? 'lit' : on ? 'dim' : 'idle'}
+                  lead={
+                    stop && leadAt >= 0
+                      ? {
+                          at: leadAt,
+                          label: `Open ${describe(stop.notes)}`,
+                          expanded: active.includes(note.n),
+                          controls: cardId,
+                          onOpen: () => onPick(stop.notes),
+                        }
+                      : undefined
+                  }
                 />
               )
             )
@@ -95,6 +115,9 @@ export function Sheet({ page, notes, strips, cats, selection, onPick, onStep }: 
       />
       {shown && (
         <NoteCard
+          id={cardId}
+          label={describe(shown.notes)}
+          onClose={onClose}
           notes={notes.filter((n) => shown.notes.includes(n.n))}
           cats={cats}
           open={on}
